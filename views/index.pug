@@ -1,0 +1,15 @@
+doctype html
+html(lang='en')
+  include common/head.pug
+  +head("CMS FTP")
+  body
+    header
+    include common/navbar.pug 
+    +navbar(user)
+      
+    h1= title
+    p Welcome to #{title}
+    a(href='/add') Add User
+
+    include common/footer.pug
+      +footer()

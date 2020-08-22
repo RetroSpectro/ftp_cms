@@ -1,0 +1,19 @@
+mixin navbar(user)
+  nav.navbar.navbar-expand.navbar-dark.bg-dark
+    a(href="/", aria-label="Findee").navbar-brand.mr-0.mr-md-2
+      img(src="/images/", width="36", height="36")
+    .collapse.navbar-collapse
+      ul.navbar-nav.mr-auto
+        li.nav-item
+          a.nav-link CMS FTP
+        li.nav-item
+          a.nav-link(href="/") Главная              
+    .navbar-right
+      if user
+         ul.navbar-nav.mr-auto
+            li.nav-item
+               a.nav-link(href="/logout").btn.btn-outline-secondary Выйти
+      if !user
+         ul.navbar-nav.mr-auto.navbar-dark
+            li.nav-item
+                a.nav-link(href="/login").btn.btn-outline-secondary  Вход
