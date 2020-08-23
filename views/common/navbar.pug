@@ -7,12 +7,24 @@ mixin navbar(user)
         li.nav-item
           a.nav-link CMS FTP
         li.nav-item
-          a.nav-link(href="/") Главная              
+          a.nav-link(href="/") Главная     
+        if user 
+            li.nav-item
+              .dropdown
+                a#dropdownMenuLink.nav-link.dropdown-toggle(href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false')
+                  | FTP 
+                .dropdown-menu(aria-labelledby='dropdownMenuLink')
+                  a.dropdown-item(href="/ftp") Создать папку
+                  a.dropdown-item(href="/ftp_dir") Просмотр папок
+                  if user && user.role== "admin"
+                    a.dropdown-item(href='/add') Добавить пользователя
     .navbar-right
       if user
          ul.navbar-nav.mr-auto
             li.nav-item
-               a.nav-link(href="/logout").btn.btn-outline-secondary Выйти
+              a.nav-link #{user.username}
+            li.nav-item
+              a.nav-link(href="/logout").btn.btn-outline-secondary Выйти
       if !user
          ul.navbar-nav.mr-auto.navbar-dark
             li.nav-item

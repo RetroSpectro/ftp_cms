@@ -11,11 +11,9 @@ html(lang='en')
     form(action='/add_user',method='POST')
         .formgroup
             lable.small.mb-1.mt-3 Имя:
-            input(placeholder='Enter your name', required=true, name='username', type='text', value=formData.username).form-control
-            lable.small.mb-1.mt-3 Почта:
-            input(placeholder='Enter your email', required=true, name='email', type='email', value=formData.email).form-control
-            if (errors&&errors.email)
-                p.small.text-danger #{errors.email} 
+            input(placeholder='Enter username', required=true, name='username', type='text', value=formData.username).form-control
+            if (errors&&errors.username)
+                p.small.text-danger #{errors.username}
             lable.small.mb-1.mt-3 Пароль:
             input(placeholder='Password', required=true, name='password', type='password', value='').form-control
             if (errors&&errors.password)

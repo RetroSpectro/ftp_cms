@@ -5,7 +5,7 @@ const passport = require('passport');
 const myPassport = require('../passport_setup')(passport);
 let flash = require('connect-flash');
 const { isEmpty } = require('lodash');
-const { validateUser } = require('../validators/signup');
+const { validateUser } = require('../validators/add');
 
 
 

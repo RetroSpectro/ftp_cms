@@ -1,0 +1,22 @@
+doctype html
+html(lang='en')
+  include ../common/head.pug
+  +head("CMS FTP")
+  body
+    header
+    include ../common/navbar.pug 
+    +navbar(user)
+    .container
+      h1= title
+      p Welcome to #{title}
+      form(action='/login',method='POST')
+          .formgroup
+              lable.small.mb-1.mt-3 Имя:
+              input(placeholder='Enter your name', required=true, name='username', type='text', value=formData.username).form-control
+              lable.small.mb-1.mt-3 Пароль:
+              input(placeholder='Password', required=true, name='password', type='password', value='').form-control
+              if (errors&&errors.password)
+                  p.small.text-danger #{errors.password}
+              button.mt-3.btn.btn-primary(type='submit') Вход
+    include ../common/footer.pug
+    +footer()

@@ -6,10 +6,10 @@ html(lang='en')
     header
     include common/navbar.pug 
     +navbar(user)
-      
-    h1= title
-    p Welcome to #{title}
-    a(href='/add') Add User
-
-    include common/footer.pug
-      +footer()
+    .container
+      h1= title
+      p Welcome to #{title}      
+      if user 
+        h3 You enter as  #{user.role}
+  include common/footer.pug
+  +footer()

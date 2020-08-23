@@ -1,0 +1,24 @@
+doctype html
+html(lang='en')
+  include ../common/head.pug
+  +head("CMS FTP")
+  body
+    header
+    include ../common/navbar.pug 
+    +navbar(user)
+    .container
+      h1= title
+      if dirs
+            for dir in dirs
+                .media
+                    a(href="/dirs/"+dir.name).text-decoration-none.text-dark
+                        img.mr-1(src='/images/images.png' alt=dir.name)
+                        .media-body
+                            h5.mt-0 #{dir.name}
+                            | #{dir.time} 
+                            p.text-primary #{dir.user} 
+                            p.text-info #{dir.role }
+      if dirs.length==0
+        h1 Нет рабочих папок                      
+  include ../common/footer.pug
+  +footer()

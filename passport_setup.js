@@ -28,15 +28,16 @@ module.exports = function(passport) {
 			done(null, user);
 		})
 	});
+
 	passport.use(new LocalStrategy({
-		usernameField: 'email', 
+		usernameField: 'username', 
 		passwordField: 'password',
 		passReqToCallback: true
 	},
-	function(req, email, password, done) {
+	function(req, username, password, done) {
 		return models.User.findOne({
 			where: {
-				email : email
+				username : username
 			},
 		}).then(user => {
 			if (user == null) {
@@ -47,7 +48,7 @@ module.exports = function(passport) {
 				return done(null, false)
 			} else if(!validPassword(user, password)) {
                 console.log('Incorrect credentials');
-			//	req.flash('message', 'Incorrect credentials')
+				req.flash('message', 'Incorrect credentials')
 				return done(null, false)
 			}
 			return done(null, user);

@@ -12,12 +12,20 @@ router.get('/add', main.get_add_page);
 
 router.post('/add_user', main.add_user);
 
+/*FTP */
 
+router.get('/ftp', main.get_ftp_page);
+router.post('/add_working_dir', main.add_working_dir);
+
+router.get('/ftp_dir', main.get_ftp_dir);
+
+router.get('/dirs/:dir', main.get_modered_dir);
 
 /* AUTH */
 
 router.get('/login', user.get_login_page);
-router.get('/logout', hasAuth, user.logout);
+router.post('/login', user.login);
+router.post('/logout', hasAuth, user.logout);
 
 
 

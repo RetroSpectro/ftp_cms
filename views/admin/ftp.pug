@@ -1,0 +1,24 @@
+doctype html
+html(lang='en')
+  include ../common/head.pug
+  +head("CMS FTP")
+  body
+    header
+    include ../common/navbar.pug 
+    +navbar(user)
+    .container
+        h1= title
+        p Welcome to #{title}
+        form(action='/add_working_dir',method='POST')
+            .formgroup
+                lable.small.mb-1.mt-3 Имя папки:
+                input(placeholder='Название', required=true, name='file', type='text').form-control
+                lable.small.mb-1.mt-3 Пользователь:
+                select( id="username"  required=true, name='username').form-control
+                    if users
+                        for usr in users
+                            if usr.role != "admin" && usr.username!=user.username
+                                option(value=usr.username) #{usr.username + " | "+ usr.role}    
+                button.mt-3.btn.btn-primary(type='submit') Добавить
+    include ../common/footer.pug
+    +footer()
