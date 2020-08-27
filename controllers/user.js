@@ -6,7 +6,7 @@ const myPassport = require('../passport_setup')(passport);
 let flash = require('connect-flash');
 const { isEmpty } = require('lodash');
 const { validateUser } = require('../validators/add');
-
+const { promisify } = require('util')
 
 
   exports.get_login_page = function(req, res, next) {

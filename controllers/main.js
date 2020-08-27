@@ -4,48 +4,80 @@ const passport = require('passport');
 const myPassport = require('../passport_setup')(passport);
 let flash = require('connect-flash');
 const { isEmpty } = require('lodash');
+const { promisify } = require('util')
 const { validateUser } = require('../validators/add');
 var fs = require('fs');
-const { promisify } = require('util')
+var Client = require('jsftp');
+var client;
+var server=require("../ftp");
 
+  
 const readdir = promisify(require('fs').readdir)
 const stat = promisify(require('fs').stat)
 
+let  basedir;
+let dirCall = function(nullS, dirname)
+{
+    basedir = dirname+"/";
+}
 
-const basedir = "/home/mikesb/temp/";
+server.getRoot(client,dirCall);
+
+var multer = require('multer');
+
 
 let generateHash = function (password) {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null)
 }
+function clientAuth( user,pass,role) {
+    client = new Client({
+    host: server.host,
+    port: server.options.port,
+    role: role
+  });
+  client.auth(
+      user,
+      pass,
+    function(error, response) {
+     console.log("ERROR: "+error);
+     console.log("RESPONSE: "+response);
+    }
+  );
+  return client;
+}   
 
-
-exports.get_main_page = function(req, res, next) {
-    res.render('index', { title: 'CMS',user: req.user });
+exports.get_main_page = function (req, res, next) {
+    if(req.user)
+    {
+    client = clientAuth(req.user.username, req.user.password,req.user.role);
+    console.log("HERE IS BASEDIR");
+    console.log(basedir);
+    }
+    res.render('index', { title: 'CMS', user: req.user });
     models.Role.findAll().then(roles => {
-        
-        if(roles.length==0)
-        {
-               let add = require('./FillRoleTable.js');
-                add.addRoles();
+
+        if (roles.length == 0) {
+            let add = require('./FillRoleTable.js');
+            add.addRoles();
         }
     });
-
-  }
-
-  exports.get_add_page = function(req, res, next) {
-    models.Role.findAll().then(roles => {
-    res.render('admin/add', { title: 'Add User', formData: {}, errors: {}, roles: roles,user: req.user });
-    });
-  }
-
-  
-const rerender = function (errors, req, res, next) {
-    models.Role.findAll().then(roles => {
-    res.render('admin/add', {title: 'Add User', formData: req.body, errors: errors, roles: roles,user: req.user  });
-});
+ 
 }
 
-  exports.add_user= function(req, res, next) {
+exports.get_add_page = function (req, res, next) {
+    models.Role.findAll().then(roles => {
+        res.render('admin/add', { title: 'Add User', formData: {}, errors: {}, roles: roles, user: req.user });
+    });
+}
+
+
+const rerender = function (errors, req, res, next) {
+    models.Role.findAll().then(roles => {
+        res.render('admin/add', { title: 'Add User', formData: req.body, errors: errors, roles: roles, user: req.user });
+    });
+}
+
+exports.add_user = function (req, res, next) {
     let errors = {};
     return validateUser(errors, req).then(errors => {
         if (!isEmpty(errors)) {
@@ -54,92 +86,144 @@ const rerender = function (errors, req, res, next) {
         else {
             let newUser = models.User.build({
                 username: req.body.username,
-                password:generateHash(req.body.password),
+                password: generateHash(req.body.password),
                 role: req.body.role
             });
-            
+
             return newUser.save().then(result => {
                 res.redirect("/add");
             })
         }
     });
-  }
+}
 
 
-  exports.get_ftp_page = function(req, res, next) {
-    return models.User.findAll().then(users=>{
-        console.log(users)
-        res.render('admin/ftp', { title: 'FTP',user: req.user, users: users });
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+     console.log( basedir+req.params.dir + "/" + req.params.indir  + "/" + file.originalname);
+
+        callback(null, basedir+req.params.dir + "/" + req.params.indir  );
+    },
+    filename: (req, file, callback) => {
+        callback(null, Date.now() + file.originalname);
+    }
+});
+
+var upload = multer({ storage: storage }).single('file');
+
+
+exports.post_files = function (req, res, next) {
+ 
+        upload(req, res, function (err) {
+
+          //console.log("owen",req.file,err);
+          if (err) {
+            console.log(err);
+            console.log("file is NOT uploaded");
+          }
+          else {
+            if (req.file) {
+                let UserFile = models.UserFile.build({
+                                    username: req.body.username,
+                                    role: req.user.role,
+                                    file: req.params.dir + "/" + req.params.indir + "/" + req.file.filename
+                                });
+            
+                                return UserFile.save().then(result => {
+                                     res.redirect('/dirs/' +req.params.dir + "/" + req.params.indir );
+            
+                                })
+            }
+  
+
+          }
+        });
+}
+
+exports.get_ftp_page = function (req, res, next) {
+    return models.User.findAll().then(users => {
+        res.render('admin/ftp', { title: 'FTP', user: req.user, users: users });
     })
-  }
+}
 
-   function createDir(dirname){
-     fs.mkdirSync(basedir+dirname);
-  }
+function createDir(dirname) {
+    fs.mkdirSync(basedir + dirname);
+}
 
- async function readDir(dirname)
-  {
+
+async function readDir(basedirP, dirname) {
     const pathContent = [];
 
     let files = await readdir(dirname)
-    
+
 
 
 
     for (let file of files) {
         // get file info and store in pathContent
         try {
-        let stats = await stat(dirname + '/' + file)
-        if (stats.isFile()) {
+            let stats = await stat(dirname + '/' + file)
+            if (stats.isFile()) {
 
-            pathContent.push({
-            time:stats.birthtime,
-            name: file.substring(0, file.lastIndexOf('.')),
-            type: file.substring(file.lastIndexOf('.') + 1).concat(' File'),
-            })
-        } else if (stats.isDirectory()) {
-            pathContent.push({
-            time:stats.birthtime,
-            name: file,
-            type: 'Directory',
-            });
-        }
+                pathContent.push({
+                    time: stats.birthtime,
+                    name:basedirP +  file,
+                    type: file.substring(file.lastIndexOf('.')+1),
+                })
+            } else if (stats.isDirectory()) {
+                pathContent.push({
+                    time: stats.birthtime,
+                    name: basedirP + file,
+                    type: 'Directory',
+                });
+            }
         } catch (err) {
-        console.log(`${err}`);
+            console.log(`${err}`);
         }
     }
     return pathContent;
-  }
+}
 
-  async function modifyDirs(container)
-  {
+async function modifyDirs(container) {
     let arr = [];
-    for(let i = 0; i<container.length ; i++){
-        await   models.UserFile.findOne({where:{
-         file: container[i].name
-        }}).then(info=>{
-           
-            arr.push({
-                time: container[i].time,
-                name:  container[i].name,
-                type:  container[i].type,
-                user:info.username,
-                role: info.role
+    console.log(container);
+    for (let i = 0; i < container.length; i++) {
+console.log(container[i].name);
+        await models.UserFile.findOne({
+            where: {
+                file: container[i].name
+            }
+        }).then(info => {
+             console.log(info);
+             if(info!=null)
+             {
+                console.log(container[i].name);
+
+                arr.push({
+                    time: container[i].time,
+                    name: container[i].name,
+                    type: container[i].type,
+                    user: info.username,
+                    role: info.role
                 })
+             }
+         
         })
-    
+
     }
-    console.log(arr)
+    // console.log(arr)
     return arr;
 
-  }
+}
 
-  exports.add_working_dir = function(req, res, next) {
+exports.add_working_dir = function (req, res, next) {
 
-   return models.User.findOne({where:{
-        username:req.body.username
-    }}).then(user => {
-        
+    return models.User.findOne({
+        where: {
+            username: req.body.username
+        }
+    }).then(user => {
+
         createDir(req.body.file);
 
         let UserFile = models.UserFile.build({
@@ -154,34 +238,67 @@ const rerender = function (errors, req, res, next) {
     });
 
 }
-exports.get_ftp_dir =  function(req, res, next) {
+exports.get_ftp_dir = function (req, res, next) {
 
-   
-    readDir(basedir).then((pathContent) => {
-    
-        modifyDirs(pathContent).then((arr)=>{
-            console.log("here"+arr)
-            res.render('admin/dir', { title: 'FTP', dirs:  arr, user: req.user});
+
+    readDir("", basedir).then((pathContent) => {
+
+
+        modifyDirs(pathContent).then((arr) => {
+            console.log("here" + arr)
+            res.render('admin/dir', { title: 'FTP', dirs: arr, user: req.user });
 
         });
-        
-      
-      }, (err) => {
+
+
+    }, (err) => {
         res.status(422).json({
-          message: `${err}`
+            message: `${err}`
         });
-      })
-  }
+    })
+}
 
-  exports.get_modered_dir =  function(req, res, next) {
+exports.get_modered_dir = function (req, res, next) {
+    console.log(req.params.dir)
 
-    readDir(basedir+req.params.dir).then((pathContent) => {
-    
-        res.render('admin/dir', { title: 'FTP', dirs:  pathContent, user: req.user});
+    readDir(req.params.dir + "/", basedir + req.params.dir).then((pathContent) => {
 
-      }, (err) => {
+        console.log("here" + pathContent);
+
+        modifyDirs(pathContent).then((arr) => {
+            console.log("here" + arr)
+            // return models.User.findAll().then(users=>{
+            res.render('admin/dir', { title: 'FTP', dirs: arr, user: req.user });
+            //});
+
+
+        });
+
+    }, (err) => {
         res.status(422).json({
-          message: `${err}`
+            message: `${err}`
         });
-      })
-  }
+    })
+}
+exports.get_content = function (req, res, next) {
+    console.log(req.params.dir + "/" + req.params.indir + "/")
+    readDir(req.params.dir + "/" + req.params.indir + "/", basedir + req.params.dir + "/" + req.params.indir + "/").then((pathContent) => {
+
+        //  console.log("here"+pathContent);
+   console.log("GET CONTENT");
+        modifyDirs(pathContent).then((arr) => {
+            console.log("ARRAY")
+                console.log(arr)
+            return models.User.findAll().then(users => {
+                res.render('admin/content', { title: 'FTP', dirs: arr, user: req.user, users: users, main: req.params.dir + "/" + req.params.indir + "/" });
+            });
+
+
+        });
+
+    }, (err) => {
+        res.status(422).json({
+            message: `${err}`
+        });
+    })
+}

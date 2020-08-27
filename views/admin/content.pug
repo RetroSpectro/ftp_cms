@@ -1,0 +1,53 @@
+doctype html
+html(lang='en')
+  include ../common/head.pug
+  +head("CMS FTP")
+  body
+    header
+    include ../common/navbar.pug 
+    +navbar(user) 
+    .container
+        #myModal.modal.fade(tabindex='-1' aria-labelledby='exampleModalLabel' aria-hidden='true')
+            .modal-dialog.modal-dialog-centered
+                .modal-content
+                    .modal-header
+                        h5#exampleModalLabel.modal-title
+                        button.close(type='button' data-dismiss='modal' aria-label='Close')
+                        span(aria-hidden='true') &times;
+                    .modal-body
+                    .modal-footer
+                        button.btn.btn-secondary(type='button' data-dismiss='modal') Close
+                        button.btn.btn-primary(type='button') Save changes
+        h1(id=main)= title
+        //- .modal-dialog.modal-dialog-centered.modal-dialog-scrollable(id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true")
+        //-         p хуй
+        form(id="myForm")
+                .input-group-append
+                input( id="file" name="file", type="file", placeholder="File").form-control
+                .input-group-append
+                lable.small.mb-1.mt-3 Пользователь:
+                    select( id="username"  required=true, name='username').form-control
+                            if users
+                                for usr in users
+                                    if usr.role != "admin" &&  usr.role != "moder"  && usr.username!=user.username
+                                        option(value=usr.username) #{usr.username + " | "+ usr.role}    
+                button.mt-3.btn.btn-primary(type='submit') Отправить
+        if dirs
+                for dir in dirs
+                    .media
+                        a(href=dir.name data-toggle='modal' data-target='#myModal').text-decoration-none.text-dark
+                            if dir.type =="Directory"
+                                img.mr-1(src='/images/images.png' alt=dir.name)
+                            else
+                                img.mr-1(src='/images/png/'+dir.type+'.png' alt=dir.name width="300px" height="300px")
+                            .media-body
+                                h5.mt-0 #{dir.name}
+                                | #{dir.time} 
+                                p.text-primary #{dir.user} 
+                                p.text-info #{dir.role }
+        if dirs.length==0
+            h1 Нет рабочих папок                      
+  include ../common/footer.pug
+  +footer()
+  script(src='/javascripts/file.js')     
+  script(src='/javascripts/showFile.js')    

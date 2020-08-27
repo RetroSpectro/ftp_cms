@@ -51,4 +51,7 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
+var server = require("./ftp.js");
+
+
 module.exports = app;

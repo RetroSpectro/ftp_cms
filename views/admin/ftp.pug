@@ -9,6 +9,7 @@ html(lang='en')
     .container
         h1= title
         p Welcome to #{title}
+       
         form(action='/add_working_dir',method='POST')
             .formgroup
                 lable.small.mb-1.mt-3 Имя папки:
@@ -17,7 +18,7 @@ html(lang='en')
                 select( id="username"  required=true, name='username').form-control
                     if users
                         for usr in users
-                            if usr.role != "admin" && usr.username!=user.username
+                            if usr.role != "admin" 
                                 option(value=usr.username) #{usr.username + " | "+ usr.role}    
                 button.mt-3.btn.btn-primary(type='submit') Добавить
     include ../common/footer.pug
