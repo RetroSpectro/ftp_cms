@@ -9,19 +9,19 @@ const { validateUser } = require('../validators/add');
 var fs = require('fs');
 var Client = require('jsftp');
 var client;
-var server=require("../ftp");
+var server = require("../ftp");
 
-  
+
 const readdir = promisify(require('fs').readdir)
+const readfile = promisify(require('fs').readFile)
 const stat = promisify(require('fs').stat)
 
-let  basedir;
-let dirCall = function(nullS, dirname)
-{
-    basedir = dirname+"/";
+let basedir;
+let dirCall = function (nullS, dirname) {
+    basedir = dirname + "/";
 }
 
-server.getRoot(client,dirCall);
+server.getRoot(client, dirCall);
 
 var multer = require('multer');
 
@@ -29,29 +29,28 @@ var multer = require('multer');
 let generateHash = function (password) {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null)
 }
-function clientAuth( user,pass,role) {
+function clientAuth(user, pass, role) {
     client = new Client({
-    host: server.host,
-    port: server.options.port,
-    role: role
-  });
-  client.auth(
-      user,
-      pass,
-    function(error, response) {
-     console.log("ERROR: "+error);
-     console.log("RESPONSE: "+response);
-    }
-  );
-  return client;
-}   
+        host: server.host,
+        port: server.options.port,
+        role: role
+    });
+    client.auth(
+        user,
+        pass,
+        function (error, response) {
+            console.log("ERROR: " + error);
+            console.log("RESPONSE: " + response);
+        }
+    );
+    return client;
+}
 
 exports.get_main_page = function (req, res, next) {
-    if(req.user)
-    {
-    client = clientAuth(req.user.username, req.user.password,req.user.role);
-    console.log("HERE IS BASEDIR");
-    console.log(basedir);
+    if (req.user) {
+        client = clientAuth(req.user.username, req.user.password, req.user.role);
+        console.log("HERE IS BASEDIR");
+        console.log(basedir);
     }
     res.render('index', { title: 'CMS', user: req.user });
     models.Role.findAll().then(roles => {
@@ -61,7 +60,7 @@ exports.get_main_page = function (req, res, next) {
             add.addRoles();
         }
     });
- 
+
 }
 
 exports.get_add_page = function (req, res, next) {
@@ -100,9 +99,9 @@ exports.add_user = function (req, res, next) {
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
-     console.log( basedir+req.params.dir + "/" + req.params.indir  + "/" + file.originalname);
+        console.log(basedir + req.params.dir + "/" + req.params.indir + "/" + file.originalname);
 
-        callback(null, basedir+req.params.dir + "/" + req.params.indir  );
+        callback(null, basedir + req.params.dir + "/" + req.params.indir);
     },
     filename: (req, file, callback) => {
         callback(null, Date.now() + file.originalname);
@@ -113,31 +112,31 @@ var upload = multer({ storage: storage }).single('file');
 
 
 exports.post_files = function (req, res, next) {
- 
-        upload(req, res, function (err) {
 
-          //console.log("owen",req.file,err);
-          if (err) {
+    upload(req, res, function (err) {
+
+        //console.log("owen",req.file,err);
+        if (err) {
             console.log(err);
             console.log("file is NOT uploaded");
-          }
-          else {
+        }
+        else {
             if (req.file) {
                 let UserFile = models.UserFile.build({
-                                    username: req.body.username,
-                                    role: req.user.role,
-                                    file: req.params.dir + "/" + req.params.indir + "/" + req.file.filename
-                                });
-            
-                                return UserFile.save().then(result => {
-                                     res.redirect('/dirs/' +req.params.dir + "/" + req.params.indir );
-            
-                                })
-            }
-  
+                    username: req.body.username,
+                    role: req.user.role,
+                    file: req.params.dir + "/" + req.params.indir + "/" + req.file.filename
+                });
 
-          }
-        });
+                return UserFile.save().then(result => {
+                    res.redirect('/dirs/' + req.params.dir + "/" + req.params.indir);
+
+                })
+            }
+
+
+        }
+    });
 }
 
 exports.get_ftp_page = function (req, res, next) {
@@ -150,6 +149,56 @@ function createDir(dirname) {
     fs.mkdirSync(basedir + dirname);
 }
 
+async function readFile(dirname,res,req) {
+    console.log("diname:" + dirname);
+   let datum = await readfile(dirname)
+   if(datum)
+   {
+    res.end(datum,'Base64');
+    res.render('admin/show', { title: 'FTP', content: datum, user: req.user}); 
+   }
+   console.log(datum);
+ 
+    if(dirname.substring(dirname.lastIndexOf('.') + 1 )== "mp4")
+    {
+        var file = path.resolve(dirname);
+        fs.stat(file, function(err, stats) {
+            if (err) {
+              if (err.code === 'ENOENT') {
+                // 404 Error if file not found
+                return res.sendStatus(404);
+              }
+            res.end(err);
+            }
+            var range = req.headers.range;
+            if (!range) {
+             // 416 Wrong range
+             return res.sendStatus(416);
+            }
+            var positions = range.replace(/bytes=/, "").split("-");
+            var start = parseInt(positions[0], 10);
+            var total = stats.size;
+            var end = positions[1] ? parseInt(positions[1], 10) : total - 1;
+            var chunksize = (end - start) + 1;
+        
+            res.writeHead(206, {
+              "Content-Range": "bytes " + start + "-" + end + "/" + total,
+              "Accept-Ranges": "bytes",
+              "Content-Length": chunksize,
+              "Content-Type": "video/mp4"
+            });
+        
+            var stream = fs.createReadStream(file, { start: start, end: end })
+              .on("open", function() {
+                stream.pipe(res);
+              }).on("error", function(err) {
+                res.end(err);
+              });
+          });
+    }
+  
+  return datum;
+}
 
 async function readDir(basedirP, dirname) {
     const pathContent = [];
@@ -167,8 +216,8 @@ async function readDir(basedirP, dirname) {
 
                 pathContent.push({
                     time: stats.birthtime,
-                    name:basedirP +  file,
-                    type: file.substring(file.lastIndexOf('.')+1),
+                    name: basedirP + file,
+                    type: file.substring(file.lastIndexOf('.') + 1),
                 })
             } else if (stats.isDirectory()) {
                 pathContent.push({
@@ -188,15 +237,14 @@ async function modifyDirs(container) {
     let arr = [];
     console.log(container);
     for (let i = 0; i < container.length; i++) {
-console.log(container[i].name);
+        console.log(container[i].name);
         await models.UserFile.findOne({
             where: {
                 file: container[i].name
             }
         }).then(info => {
-             console.log(info);
-             if(info!=null)
-             {
+            console.log(info);
+            if (info != null) {
                 console.log(container[i].name);
 
                 arr.push({
@@ -206,8 +254,8 @@ console.log(container[i].name);
                     user: info.username,
                     role: info.role
                 })
-             }
-         
+            }
+
         })
 
     }
@@ -285,10 +333,10 @@ exports.get_content = function (req, res, next) {
     readDir(req.params.dir + "/" + req.params.indir + "/", basedir + req.params.dir + "/" + req.params.indir + "/").then((pathContent) => {
 
         //  console.log("here"+pathContent);
-   console.log("GET CONTENT");
+        console.log("GET CONTENT");
         modifyDirs(pathContent).then((arr) => {
             console.log("ARRAY")
-                console.log(arr)
+            console.log(arr)
             return models.User.findAll().then(users => {
                 res.render('admin/content', { title: 'FTP', dirs: arr, user: req.user, users: users, main: req.params.dir + "/" + req.params.indir + "/" });
             });
@@ -300,5 +348,12 @@ exports.get_content = function (req, res, next) {
         res.status(422).json({
             message: `${err}`
         });
+    })
+}
+
+exports.get_content_to_show = function (req, res, next) {
+    console.log(req.params.dir + "/" + req.params.indir + "/" + req.params.cont)
+    readFile(basedir + req.params.dir + "/" + req.params.indir + "/" + req.params.cont, res,req).then((content) => {
+       
     })
 }

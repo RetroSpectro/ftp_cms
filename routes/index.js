@@ -21,13 +21,14 @@ router.get('/ftp_dir',main.get_ftp_dir);
 
 router.get('/dirs/:dir', main.get_modered_dir);
 router.get('/dirs/:dir/:indir', main.get_content);
+router.get('/dirs/:dir/:indir/:cont', main.get_content_to_show);
 
 
 
 /* AUTH */
 
 router.get('/login', user.get_login_page);
-router.post('/login', user.login);
+router.post('/login',user.login);
 router.get('/logout', user.logout);
 
 

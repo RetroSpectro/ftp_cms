@@ -1,0 +1,18 @@
+doctype html
+html(lang='en')
+  include ../common/head.pug
+  +head("CMS FTP")
+  body
+    header
+    include ../common/navbar.pug 
+    +navbar(user) 
+    .container
+        if content
+            img(src="data:image/jpeg;base64, #{content}")
+            video(controls)
+                source(type="video/mp4")
+                | Your browser does not support the  
+                 code video
+                | element.
+  include ../common/footer.pug
+  +footer()  
