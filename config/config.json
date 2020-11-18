@@ -1,6 +1,6 @@
 {
   "development": {
-    "username": "root",
+    "username": "postgres",
     "password": "94cfpmky",
     "database": "cms_db",
     "host": "127.0.0.1",
