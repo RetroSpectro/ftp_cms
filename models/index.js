@@ -17,7 +17,9 @@ const config1 = {
   dialectModule: "mysql2"
 };
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialectModule: 'postgres'
+  dialectModule: 'postgres',
+  protocol: 'postgres',
+  logging:  true 
 });
 
 fs
