@@ -19,5 +19,20 @@ module.exports.addRoles = function (res, req, next) {
            
         }
 
+
+        let bcrypt = require("bcrypt");
+        let generateHash = function (password) {
+            return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null)
+        }
+        let newUser = models.User.build({
+            username: "root",
+            password: generateHash("root"),
+            role: "admin"
+        });
+
+        return newUser.save().then(result => {
+            console.log("admin");
+        })
+
     return null;
 }
