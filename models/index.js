@@ -8,19 +8,19 @@ const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
 
-const config1 = {
-  username: process.env.DATABASE_USERNAME,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-  host: process.env.DATABASE_HOST,
-  dialect: "mysql",
-  dialectModule: "mysql2"
-};
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
+const sequelize = new Sequelize(
+  "postgres://yboqnmcgxwjyqr:a04edc8cec4e281e1ceb9dae4fc5af9468d60fae854a73deacd9e0cb60cca7a9@ec2-54-247-71-245.eu-west-1.compute.amazonaws.com:5432/d39kis2ae3as88", {
   dialectModule: 'postgres',
   protocol: 'postgres',
   logging:  true 
 });
+
+try {
+  await sequelize.authenticate();
+  console.log('Connection has been established successfully.');
+} catch (error) {
+  console.error('Unable to connect to the database:', error);
+}
 
 fs
   .readdirSync(__dirname)
