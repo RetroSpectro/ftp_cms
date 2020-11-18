@@ -8,12 +8,17 @@ const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
+const config1 = {
+  username: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+  host: process.env.DATABASE_HOST,
+  dialect: "mysql",
+  dialectModule: "mysql2"
+};
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialectModule: pg
+});
 
 fs
   .readdirSync(__dirname)
