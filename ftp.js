@@ -38,7 +38,7 @@ if (process.env.KEY_FILE && process.env.CERT_FILE) {
 
 server = new ftpd.FtpServer(options.host, {
   getInitialCwd: function (connection, callback) {
-    var userDir = '/root';
+    var userDir = './root';
     fs.exists(userDir, function (exists) {
       if (exists) {
         callback(null, userDir);
@@ -53,7 +53,7 @@ server = new ftpd.FtpServer(options.host, {
 
     //var rootPath = process.cwd() + '/' + connection.username;
 
-    var userDir = '/root';
+    var userDir = './root';
 
 
     console.log("PATHS");
