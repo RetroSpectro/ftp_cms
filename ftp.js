@@ -67,7 +67,7 @@ server = new ftpd.FtpServer(options.host, {
 
           fs.mkdir(userDir, function (err) {
             if (err) {
-              callback(null, '/root'); // default to root
+              callback(null, './root'); // default to root
             } else {
               callback(err, userDir);
             }
