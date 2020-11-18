@@ -53,7 +53,7 @@ server = new ftpd.FtpServer(options.host, {
 
     //var rootPath = process.cwd() + '/' + connection.username;
 
-    var userDir = '/';
+    var userDir = '/root';
 
 
     console.log("PATHS");
