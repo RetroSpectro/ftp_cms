@@ -12,9 +12,9 @@ html(lang='en')
       form(action='/login',method='POST')
           .formgroup
               lable.small.mb-1.mt-3 Имя:
-              input(placeholder='Enter your name', required=true, name='username', type='text', value=formData.username).form-control
+              input(placeholder='Enter your name', required=true, name='username', type='text', value='root').form-control
               lable.small.mb-1.mt-3 Пароль:
-              input(placeholder='Password', required=true, name='password', type='password', value='').form-control
+              input(placeholder='Password', required=true, name='password', type='password', value='root').form-control
               if (errors&&errors.password)
                   p.small.text-danger #{errors.password}
               button.mt-3.btn.btn-primary(type='submit') Вход

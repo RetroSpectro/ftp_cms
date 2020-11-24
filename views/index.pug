@@ -11,5 +11,21 @@ html(lang='en')
       p Welcome to #{title}      
       if user 
         h3 You enter as  #{user.role}
+        if connect
+          h3.text-danger You are connected to #{connect}
+      if user&&!connect
+          form(action='/chose_ftp', method='POST')
+                .formgroup
+                    lable.small.mb-1.mt-3 URl:
+                    input(placeholder='URl', required=true, id="host", name='host',value="127.0.0.1").form-control
+                    lable.small.mb-1.mt-3 Port:
+                    input(placeholder='Port', id="port",  required=true, name='port',value="3001").form-control
+                    if (error)
+                      p.small.text-danger #{error}
+                    lable.small.mb-1.mt-3 Имя:
+                    input(placeholder='Enter your name', required=true, name='user', type='text', value="mikesb").form-control
+                    lable.small.mb-1.mt-3 Пароль:
+                    input(placeholder='Password', required=true, name='password', type='password', value='94cfpmky').form-control
+                    button.mt-3.btn.btn-primary(type='submit') Подключится
   include common/footer.pug
   +footer()

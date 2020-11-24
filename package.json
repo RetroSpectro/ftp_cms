@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "basic-ftp": "^4.6.3",
     "bcrypt": "^5.0.0",
     "bootstrap": "^4.5.2",
     "connect-flash": "^0.1.1",
@@ -26,6 +27,7 @@
     "pug": "^3.0.0",
     "sequelize": "^6.3.4",
     "should": "^13.2.3",
+    "stream": "0.0.2",
     "validator": "^13.1.1",
     "xftp": "^1.0.2"
   }

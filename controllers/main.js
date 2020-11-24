@@ -1,58 +1,136 @@
 let models = require("../models");
 let bcrypt = require("bcrypt");
-const passport = require('passport');
-const myPassport = require('../passport_setup')(passport);
+
 let flash = require('connect-flash');
 const { isEmpty } = require('lodash');
 const { promisify } = require('util')
 const { validateUser } = require('../validators/add');
-var fs = require('fs');
-var Client = require('jsftp');
-var client;
-var server = require("../ftp");
+const ftp = require("basic-ftp");
+const fs = require('fs');
+let dir;
+let client = new ftp.Client();
+
+let basedir="/";
+  
 
 
-const readdir = promisify(require('fs').readdir)
-const readfile = promisify(require('fs').readFile)
-const stat = promisify(require('fs').stat)
-
-let basedir;
-let dirCall = function (nullS, dirname) {
-    basedir = dirname + "/";
-}
-
-server.getRoot(client, dirCall);
 
 var multer = require('multer');
+const { connect } = require("http2");
+const { Stream } = require("stream");
 
 
 let generateHash = function (password) {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null)
 }
-function clientAuth(user, pass, role) {
-    client = new Client({
-        host: server.host,
-        port: server.options.port,
-        role: role
-    });
-    client.auth(
-        user,
-        pass,
-        function (error, response) {
-            console.log("ERROR: " + error);
-            console.log("RESPONSE: " + response);
-        }
-    );
-    return client;
+
+async function  clientAuth(host,port,user,password) {
+  
+    console.log(host);
+    console.log(port);
+    console.log(user);
+    console.log(password);
+    client.ftp.verbose = true
+    try {
+//     const secureOptions = {
+//   // Necessary only if the server requires client certificate authentication.
+//   key: fs.readFileSync('client-key.pem'),
+//   cert: fs.readFileSync('client-cert.pem'),
+
+//   // Necessary only if the server uses a self-signed certificate.
+//   ca: [ fs.readFileSync('server-cert.pem') ],
+
+//   // Necessary only if the server's cert isn't for "localhost".
+//   checkServerIdentity: () => { return null; },
+// };
+
+        await client.access({
+            host: host,
+            port:port,
+            user: user,
+            password: password,
+            secure :false,
+// secureOptions : secureOptions
+        })
+        // await client.ensureDir("/my/remote/directory")
+        console.log("************LIST OF CLIENTS FILES********");
+        await client.ensureDir(basedir)
+        console.log(await client.list())
+      
+        // client.trackProgress(info => {
+        //     console.log(info)
+        //     console.log("*************")
+        //     console.log("File", info.name)
+        //     console.log("Type", info.type)
+        //     console.log("Transferred", info.bytes)
+        //     console.log("Transferred Overall", info.bytesOverall)
+        // })
+         
+        // await client.uploadFrom("temp/readme.txt", "readme.txt")
+       // await client.downloadTo("README_COPY.md", "README_FTP.md")
+       return client;
+    }
+    catch(err) {
+
+        console.error(err)
+    }
+    client.close()
+    return null;
+}
+
+exports.chose_ftp = async function (req, res, next) {
+    let host = req.body.host;
+    let port = req.body.port;
+    let user = req.body.user;
+    let password = req.body.password;
+    console.log(host);
+    console.log(port);
+    console.log(user);
+    console.log(password);
+    client =await clientAuth(host,port,user,password);
+    if(!client)
+    {
+        console.log("SYNC FAILED");
+        res.render('index', { error: " Синхронизация прервана. Проверьте наличие FTP-сервера по адресу "+host+" и порту " +  port});
+        
+    }
+    else{
+        console.log("connected");
+        console.log(client);
+        console.log("HERE IS BASEDIR");
+        console.log(basedir);
+        await client.list(basedir, (err, res) => {
+             console.log(res);
+        //     // Prints something like
+        //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:32 testfile1.txt
+        //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:31 testfile2.txt
+        //     // -rw-r--r--   1 sergi    staff           0 May 29 13:05 testfile3.txt
+        //     // ...
+          });
+          req.flash('host', host+':'+port)
+          res.redirect('/');
+    }
+
 }
 
 exports.get_main_page = function (req, res, next) {
+   
+    basedir="/";
     if (req.user) {
-        client = clientAuth(req.user.username, req.user.password, req.user.role);
+        // client = clientAuth(req.user.username, req.user.password, req.user.role);
         console.log("HERE IS BASEDIR");
         console.log(basedir);
+        client.list(basedir, (err, res) => {
+             console.log(res);
+        //     // Prints something like
+        //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:32 testfile1.txt
+        //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:31 testfile2.txt
+        //     // -rw-r--r--   1 sergi    staff           0 May 29 13:05 testfile3.txt
+        //     // ...
+          });
+          let message = req.flash('host');
+          res.render('index', { title: 'CMS', user: req.user, connect: message[0] });
     }
-    res.render('index', { title: 'CMS', user: req.user });
     models.Role.findAll().then(roles => {
 
         if (roles.length == 0) {
@@ -61,9 +139,15 @@ exports.get_main_page = function (req, res, next) {
         }
     });
 
+    res.render('index', { title: 'CMS', user: req.user, connect:false });
+
+   
+
 }
 
+
 exports.get_add_page = function (req, res, next) {
+    basedir="/";
     models.Role.findAll().then(roles => {
         res.render('admin/add', { title: 'Add User', formData: {}, errors: {}, roles: roles, user: req.user });
     });
@@ -77,6 +161,7 @@ const rerender = function (errors, req, res, next) {
 }
 
 exports.add_user = function (req, res, next) {
+    basedir="/";
     let errors = {};
     return validateUser(errors, req).then(errors => {
         if (!isEmpty(errors)) {
@@ -140,6 +225,7 @@ exports.post_files = function (req, res, next) {
 }
 
 exports.get_ftp_page = function (req, res, next) {
+    basedir="/";
     return models.User.findAll().then(users => {
         res.render('admin/ftp', { title: 'FTP', user: req.user, users: users });
     })
@@ -149,120 +235,6 @@ function createDir(dirname) {
     fs.mkdirSync(basedir + dirname);
 }
 
-async function readFile(dirname,res,req) {
-    console.log("diname:" + dirname);
-   let datum = await readfile(dirname)
-   if(datum)
-   {
-    res.end(datum,'Base64');
-    res.render('admin/show', { title: 'FTP', content: datum, user: req.user}); 
-   }
-   console.log(datum);
- 
-    if(dirname.substring(dirname.lastIndexOf('.') + 1 )== "mp4")
-    {
-        var file = path.resolve(dirname);
-        fs.stat(file, function(err, stats) {
-            if (err) {
-              if (err.code === 'ENOENT') {
-                // 404 Error if file not found
-                return res.sendStatus(404);
-              }
-            res.end(err);
-            }
-            var range = req.headers.range;
-            if (!range) {
-             // 416 Wrong range
-             return res.sendStatus(416);
-            }
-            var positions = range.replace(/bytes=/, "").split("-");
-            var start = parseInt(positions[0], 10);
-            var total = stats.size;
-            var end = positions[1] ? parseInt(positions[1], 10) : total - 1;
-            var chunksize = (end - start) + 1;
-        
-            res.writeHead(206, {
-              "Content-Range": "bytes " + start + "-" + end + "/" + total,
-              "Accept-Ranges": "bytes",
-              "Content-Length": chunksize,
-              "Content-Type": "video/mp4"
-            });
-        
-            var stream = fs.createReadStream(file, { start: start, end: end })
-              .on("open", function() {
-                stream.pipe(res);
-              }).on("error", function(err) {
-                res.end(err);
-              });
-          });
-    }
-  
-  return datum;
-}
-
-async function readDir(basedirP, dirname) {
-    const pathContent = [];
-
-    let files = await readdir(dirname)
-
-
-
-
-    for (let file of files) {
-        // get file info and store in pathContent
-        try {
-            let stats = await stat(dirname + '/' + file)
-            if (stats.isFile()) {
-
-                pathContent.push({
-                    time: stats.birthtime,
-                    name: basedirP + file,
-                    type: file.substring(file.lastIndexOf('.') + 1),
-                })
-            } else if (stats.isDirectory()) {
-                pathContent.push({
-                    time: stats.birthtime,
-                    name: basedirP + file,
-                    type: 'Directory',
-                });
-            }
-        } catch (err) {
-            console.log(`${err}`);
-        }
-    }
-    return pathContent;
-}
-
-async function modifyDirs(container) {
-    let arr = [];
-    console.log(container);
-    for (let i = 0; i < container.length; i++) {
-        console.log(container[i].name);
-        await models.UserFile.findOne({
-            where: {
-                file: container[i].name
-            }
-        }).then(info => {
-            console.log(info);
-            if (info != null) {
-                console.log(container[i].name);
-
-                arr.push({
-                    time: container[i].time,
-                    name: container[i].name,
-                    type: container[i].type,
-                    user: info.username,
-                    role: info.role
-                })
-            }
-
-        })
-
-    }
-    // console.log(arr)
-    return arr;
-
-}
 
 exports.add_working_dir = function (req, res, next) {
 
@@ -286,74 +258,80 @@ exports.add_working_dir = function (req, res, next) {
     });
 
 }
-exports.get_ftp_dir = function (req, res, next) {
-
-
-    readDir("", basedir).then((pathContent) => {
-
-
-        modifyDirs(pathContent).then((arr) => {
-            console.log("here" + arr)
-            res.render('admin/dir', { title: 'FTP', dirs: arr, user: req.user });
-
-        });
-
-
-    }, (err) => {
-        res.status(422).json({
-            message: `${err}`
-        });
-    })
-}
-
-exports.get_modered_dir = function (req, res, next) {
-    console.log(req.params.dir)
-
-    readDir(req.params.dir + "/", basedir + req.params.dir).then((pathContent) => {
-
-        console.log("here" + pathContent);
-
-        modifyDirs(pathContent).then((arr) => {
-            console.log("here" + arr)
-            // return models.User.findAll().then(users=>{
-            res.render('admin/dir', { title: 'FTP', dirs: arr, user: req.user });
-            //});
-
-
-        });
-
-    }, (err) => {
-        res.status(422).json({
-            message: `${err}`
-        });
-    })
-}
-exports.get_content = function (req, res, next) {
-    console.log(req.params.dir + "/" + req.params.indir + "/")
-    readDir(req.params.dir + "/" + req.params.indir + "/", basedir + req.params.dir + "/" + req.params.indir + "/").then((pathContent) => {
-
-        //  console.log("here"+pathContent);
-        console.log("GET CONTENT");
-        modifyDirs(pathContent).then((arr) => {
-            console.log("ARRAY")
-            console.log(arr)
-            return models.User.findAll().then(users => {
-                res.render('admin/content', { title: 'FTP', dirs: arr, user: req.user, users: users, main: req.params.dir + "/" + req.params.indir + "/" });
+exports.get_ftp_dir = async function (req, res, next) {
+let dirs = await client.list(basedir, (err, reslts) => {
+   if (err)
+   {
+    res.status(422).json({
+                message: `${err}`
             });
+   }
+   return reslts;
+
+     });
+     if(dirs)
+     {
+        console.log(dirs);
+        res.render('admin/dir', { title: 'FTP', dirs: dirs, user: req.user });
+     }
 
 
-        });
+}
 
-    }, (err) => {
-        res.status(422).json({
-            message: `${err}`
-        });
-    })
+exports.get_modered_dir = async function (req, res, next) {
+console.log(basedir);
+    basedir+= "/"+req.params.dir;
+    console.log(basedir);
+    let dirs = await client.list(basedir, (err, reslts) => {
+     if (err)
+     {
+      res.status(422).json({
+                  message: `${err}`
+              });
+     }
+
+     return reslts;
+  
+       });
+       console.log("get_modered_dir")
+       console.log(dirs);
+       if(dirs)
+       {
+           
+          console.log(dirs);
+          res.render('admin/dir', { title: 'FTP', dirs: dirs, user: req.user });
+       }
+}
+exports.get_content =async function (req, res, next) {
+    let dirs = await client.list(basedir+ req.params.dir+ req.params.indir, (err, reslts) => {
+        if (err)
+        {
+         res.status(422).json({
+                     message: `${err}`
+                 });
+        }
+        return reslts;
+     
+          });
+          console.log("get_content")
+          console.log(dirs);
+          if(dirs)
+          {
+              
+             console.log(dirs);
+             res.render('admin/dir', { title: 'FTP', dirs: dirs, user: req.user });
+          }
 }
 
 exports.get_content_to_show = function (req, res, next) {
-    console.log(req.params.dir + "/" + req.params.indir + "/" + req.params.cont)
-    readFile(basedir + req.params.dir + "/" + req.params.indir + "/" + req.params.cont, res,req).then((content) => {
-       
-    })
+let stream= new Stream();
+
+        client.uploadFrom( stream,basedir + "/"+req.params.cont).then(reslt=>{
+        console.log("************RESULTED STREAM*********")
+            console.log(reslt)
+            console.log(stream)
+            console.log("************RESULTED STREAM END*********")
+        }); 
+
+    // This will wait until we know the readable stream is actually valid before piping   
 }
