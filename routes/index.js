@@ -20,7 +20,7 @@ router.post('/add_working_dir',main.add_working_dir);
 router.get('/ftp_dir',main.get_ftp_dir);
 
 router.get('/dirs/:dir', main.get_modered_dir);
-router.get('/content/:cont', main.get_content_to_show);
+router.post('/content', main.get_content_to_show);
 
 router.post('/chose_ftp',main.chose_ftp);
 
