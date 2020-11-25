@@ -306,80 +306,58 @@ exports.get_content_to_show = async function (req, res, next) {
         console.log(reslt)
         console.log("************RESULTED STREAM END*********")
 
-
+        let file = req.body.dirname;
+        let type = file.toString().split('.');
+        let data;
+        console.log(type[1])
+     if (type[1] == 'txt') {
+            data = fs.readFileSync('./temp/' +req.body.dirname, "utf8", (err, data) => {
+                if (err) {
+                    res.status(404).send(err);
+    
+                }
+                return data;
+    
+            })
+            if (data) {
+                console.log(data)
+                // res.status(200).json({ data: data });
+                fs.unlink('./temp/' + req.body.dirname, (err) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("FILE DELETED");
+                    }
+                })
+                res.status(200).json({ data: data, type: 'txt', filename:req.body.dirname });
+    
+            }
+        }
+        else {
+            data = fs.readFileSync('./temp/' + req.body.dirname, "base64", (err, data) => {
+                if (err) {
+                    res.status(404).send(err);
+    
+                }
+                return data;
+    
+            })
+            if (data) {
+                res.status(200).json({ data: data, type: type[1],ending:type[1], filename:req.body.dirname });
+                fs.unlink('./temp/' + req.body.dirname, (err) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("FILE DELETED");
+                    }
+                })
+            }
+        }
+    
     });
-    console.log("HERE")
-
-    let file = req.body.dirname;
-    let type = file.toString().split('.');
-    let data;
-    console.log(type[1])
-    if (type[1] == 'txt') {
-        data = fs.readFileSync('./temp/' +req.body.dirname, "utf8", (err, data) => {
-            if (err) {
-                res.status(404).send(err);
-
-            }
-            return data;
-
-        })
-        if (data) {
-            console.log(data)
-            // res.status(200).json({ data: data });
-            fs.unlink('./temp/' + req.body.dirname, (err) => {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log("FILE DELETED");
-                }
-            })
-            res.status(200).json({ data: data, type: 'txt', filename:req.body.dirname });
-
-        }
-    }
-    else if (type[1] == 'mp4') {
-        let readStream = fs.createReadStream('./temp/' + req.params.cont, 'base64');
-        readStream.on('data', (chunk) => {
-            data += chunk;
-        }).on('end', () => {
-            //res.status(200).json({ data: data });
-            readStream.pipe(res);
-            res.status(200).json({ data: data, type: 'txt', filename: req.body.dirname });
-        })
-
-
-        fs.unlink('./temp/' + req.body.dirname, (err) => {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                console.log("FILE DELETED");
-            }
-        })
-    }
-    else {
-        data = fs.readFileSync('./temp/' + req.body.dirname, "base64", (err, data) => {
-            if (err) {
-                res.status(404).send(err);
-
-            }
-            return data;
-
-        })
-        if (data) {
-            res.status(200).json({ data: data, type: 'other',ending:type[1], filename:req.body.dirname });
-            fs.unlink('./temp/' + req.body.dirname, (err) => {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log("FILE DELETED");
-                }
-            })
-        }
-    }
-
+  
 
 
 

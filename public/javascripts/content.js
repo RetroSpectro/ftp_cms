@@ -1,14 +1,14 @@
 
 $(document).ready(function () {
 
-    
 
-    $('.close').on('click',()=>{
+
+    $('.close').on('click', () => {
 
         $('.modal').modal('hide');
         $('.modal-body').empty();
     });
-    $('#close').on('click',()=>{
+    $('#close').on('click', () => {
 
         $('.modal').modal('hide');
         $('.modal-body').empty();
@@ -34,31 +34,42 @@ $(document).ready(function () {
         }).then(res => {
             console.log("Request complete! response:", res);
             if (res.status == 200) {
-                res.json().then(json=>{
-                    console.log(json);
-                    $('.modal').modal('show')
-                    $('.modal-title').text(json.filename);
-                    if(json.type=="txt")
-                    {
-    
-                        $('.modal-body').append('<p>'+json.data+'</p>')
-    
+                // res.text().then(text=>{
+                //     console.log(text);
+                // })
+
+
+                res.json().then(json => {
+                    if (json) {
+                        console.log(json);
+                        $('.modal').modal('show')
+                        $('.modal-title').text(json.filename);
+                        if (json.type == "txt") {
+
+                            $('.modal-body').append('<p>' + json.data + '</p>')
+
+                        }
+                        else if (json.type== "mp4") {
+                            
+                            $('.modal').modal('show')
+                            console.log('in video');
+                            $('.modal-body').append(`<video controls>
+                                <source src="data:video/${json.ending};base64,${json.data}" type="video/mp4"/>
+                                <!-- fallback -->
+                                Your browser does not support the <code>video</code> element.
+                            </video>`)
+                        }
+                        else{
+                                let img = $(`<img style="max-width: 100%;
+                                max-height: 100%;" alt=${json.filename}>`);
+                                img.attr("src", `data:image/${json.ending};base64,${json.data}`);
+                                $('.modal-body').append(img);
+                        }
                     }
-                    if(json.type=="mp4")
-                    {
-                   
-                         $('.modal-body').append('<video width="320" height="240" autoplay> <source src='+json.data+' type="video/mp4"></video>')
-                    }
-                    if(json.type=="other")
-                    {
-                        let img = $(`<img style="max-width: 100%;
-                        max-height: 100%;" alt=${json.filename}>`);
-                        img.attr("src",`data:image/${json.ending};base64,${json.data}`);
-                        $('.modal-body').append(img);
-                    }
-                
+
+
                 });
-                
+
             }
 
 
@@ -66,7 +77,7 @@ $(document).ready(function () {
             if (res.status == 404) {
                 res.text().then(function (text) {
                     console.log(text)
-                  //  $(".error").append(text)
+                    //  $(".error").append(text)
                 });
             }
 
