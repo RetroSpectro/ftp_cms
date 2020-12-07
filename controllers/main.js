@@ -32,6 +32,7 @@ async function clientAuth(host, port, user, password) {
     console.log(password);
     client.ftp.verbose = true
     try {
+        
         //     const secureOptions = {
         //   // Necessary only if the server requires client certificate authentication.
         //   key: fs.readFileSync('client-key.pem'),
@@ -128,7 +129,7 @@ exports.get_main_page = function (req, res, next) {
             //     // ...
         });
         let message = req.flash('host');
-        res.render('index', { title: 'CMS', user: req.user, connect: message[0] });
+        res.render('index', { title: 'CMS',user: req.user, connect: message[0] });
     }
     models.Role.findAll().then(roles => {
 
@@ -197,30 +198,37 @@ var upload = multer({ storage: storage }).single('file');
 
 exports.post_files = function (req, res, next) {
 
-    upload(req, res, function (err) {
+        uploadFrom(req.file, req.body.basedir).then(reslt => {
+           
+            res.status(200).json({ message:`File uploaded to FTP` });
+        });
 
-        //console.log("owen",req.file,err);
-        if (err) {
-            console.log(err);
-            console.log("file is NOT uploaded");
-        }
-        else {
-            if (req.file) {
-                let UserFile = models.UserFile.build({
-                    username: req.body.username,
-                    role: req.user.role,
-                    file: req.params.dir + "/" + req.params.indir + "/" + req.file.filename
-                });
+    
 
-                return UserFile.save().then(result => {
-                    res.redirect('/dirs/' + req.params.dir + "/" + req.params.indir);
+    // upload(req, res, function (err) {
 
-                })
-            }
+    //     //console.log("owen",req.file,err);
+    //     if (err) {
+    //         console.log(err);
+    //         console.log("file is NOT uploaded");
+    //     }
+    //     else {
+    //         if (req.file) {
+    //             let UserFile = models.UserFile.build({
+    //                 username: req.body.username,
+    //                 role: req.user.role,
+    //                 file: req.params.dir + "/" + req.params.indir + "/" + req.file.filename
+    //             });
+
+    //             return UserFile.save().then(result => {
+    //                 res.redirect('/dirs/' + req.params.dir + "/" + req.params.indir);
+
+    //             })
+    //         }
 
 
-        }
-    });
+    //     }
+    // });
 }
 
 exports.get_ftp_page = function (req, res, next) {
@@ -269,7 +277,23 @@ exports.get_ftp_dir = async function (req, res, next) {
     });
     if (dirs) {
         console.log(dirs);
-        res.render('admin/dir', { title: 'FTP', dirs: dirs, user: req.user });
+        let dir_desc=[];
+        for (let i = 0; i < dirs.length; i++) {
+            const dir = dirs[i];
+            if(dir.type!=2)
+            {
+                let type = dir.name.toString().split('.');
+
+                console.log(type[1])
+                dir_desc.push({type:type[1],dir:dir});
+            }
+           else{
+            dir_desc.push({type:"dir",dir:dir});
+
+           }
+            
+        }
+        res.render('admin/dir', { title: 'FTP',  basedir:basedir, dirs: dir_desc, user: req.user });
     }
 
 
@@ -277,7 +301,7 @@ exports.get_ftp_dir = async function (req, res, next) {
 
 exports.get_modered_dir = async function (req, res, next) {
     console.log(basedir);
-    basedir += "/" + req.params.dir;
+    basedir +=  req.params.dir+"/";
     console.log(basedir);
     let dirs = await client.list(basedir, (err, reslts) => {
         if (err) {
@@ -294,73 +318,167 @@ exports.get_modered_dir = async function (req, res, next) {
     if (dirs) {
 
         console.log(dirs);
-        res.render('admin/dir', { title: 'FTP', dirs: dirs, user: req.user });
+        let dir_desc=[];
+        for (let i = 0; i < dirs.length; i++) {
+            const dir = dirs[i];
+            if(dir.type!=2)
+            {
+                let type = dir.name.toString().split('.');
+
+                console.log(type[1])
+                dir_desc.push({type:type[1],dir:dir});
+            }
+           else{
+            dir_desc.push({type:"dir",dir:dir});
+
+           }
+            
+        }
+        res.render('admin/dir', { title: 'FTP', basedir:basedir, dirs: dir_desc, user: req.user });
     }
 }
 
 exports.get_content_to_show = async function (req, res, next) {
 
-
-    let reslts = await client.downloadTo("./temp/" + req.body.dirname, basedir + "/" + req.body.dirname).then(reslt => {
-        console.log("************RESULTED STREAM*********")
-        console.log(reslt)
-        console.log("************RESULTED STREAM END*********")
-
-        let file = req.body.dirname;
-        let type = file.toString().split('.');
-        let data;
-        console.log(type[1])
-     if (type[1] == 'txt') {
-            data = fs.readFileSync('./temp/' +req.body.dirname, "utf8", (err, data) => {
-                if (err) {
-                    res.status(404).send(err);
-    
-                }
-                return data;
-    
-            })
-            if (data) {
-                console.log(data)
-                // res.status(200).json({ data: data });
-                fs.unlink('./temp/' + req.body.dirname, (err) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                    else {
-                        console.log("FILE DELETED");
-                    }
-                })
-                res.status(200).json({ data: data, type: 'txt', filename:req.body.dirname });
-    
-            }
+    console.log(basedir);
+    let dirs = await client.list(basedir, (err, reslts) => {
+        if (err) {
+            res.status(422).json({
+                message: `${err}`
+            });
         }
-        else {
-            data = fs.readFileSync('./temp/' + req.body.dirname, "base64", (err, data) => {
-                if (err) {
-                    res.status(404).send(err);
-    
-                }
-                return data;
-    
-            })
-            if (data) {
-                res.status(200).json({ data: data, type: type[1],ending:type[1], filename:req.body.dirname });
-                fs.unlink('./temp/' + req.body.dirname, (err) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                    else {
-                        console.log("FILE DELETED");
-                    }
-                })
-            }
-        }
-    
+
+        return reslts;
+
     });
-  
+    console.log("get_modered_dir")
+    console.log(dirs);
+    if (dirs) {
+        let find=false;
+        for (let i = 0; i < dirs.length; i++) {
+            const element = dirs[i];
+            if(element.name==req.body.dirname)
+            {
+                find = true;
+            }
+        }
+        if(find)
+        {
 
+            let reslts = await client.downloadTo("./temp/" + req.body.dirname, basedir + "/" + req.body.dirname).then(reslt => {
+                console.log("************RESULTED STREAM*********")
+                console.log(reslt)
+                console.log("************RESULTED STREAM END*********")
+        
+                let file = req.body.dirname;
+                let type = file.toString().split('.');
+                let data;
+                console.log(type[1])
+             if (type[1] == 'txt') {
+                    data = fs.readFileSync('./temp/' +req.body.dirname, "utf8", (err, data) => {
+                        if (err) {
+                            res.status(404).send(err);
+            
+                        }
+                        return data;
+            
+                    })
+                    if (data) {
+                        console.log(data)
+                        // res.status(200).json({ data: data });
+                        fs.unlink('./temp/' + req.body.dirname, (err) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                            else {
+                                console.log("FILE DELETED");
+                            }
+                        })
+                        res.status(200).json({ data: data, type: 'txt', filename:req.body.dirname });
+            
+                    }
+                }
+                else  if (type[1] == 'json') {
+                    data = JSON.parse(fs.readFileSync('./temp/' +req.body.dirname).toString());
+                    if (data) {
+                        console.log(data)
+                        // res.status(200).json({ data: data });
+                        fs.unlink('./temp/' + req.body.dirname, (err) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                            else {
+                                console.log("FILE DELETED");
+                            }
+                        })
+                        res.status(200).json({ data: data, type: 'json', filename:req.body.dirname });
+            
+                    }
+                }
+                else {
+                    data = fs.readFileSync('./temp/' + req.body.dirname, "base64", (err, data) => {
+                        if (err) {
+                            res.status(404).send(err);
+            
+                        }
+                        return data;
+            
+                    })
+                    if (data) {
+                        res.status(200).json({ data: data, type: type[1],ending:type[1], filename:req.body.dirname });
+                        fs.unlink('./temp/' + req.body.dirname, (err) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                            else {
+                                console.log("FILE DELETED");
+                            }
+                        })
+                    }
+                }
+            
+            });
+        }
+        else{
+            fs.writeFileSync('description.json', `{"description":"Описание"}`);
 
+            client.uploadFrom('./description.json', basedir+"/description.json").then(reslt => {
+                    fs.unlink('description.json', (err) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                        else {
+                            console.log("FILE DELETED");
+                        }
+                    })
+                    res.status(200).json({ data: `{"description":"Описание"}`, type: 'json', filename:"description.json" });
+                });
+        
 
+        }
 
+    }
+
+   
+
+   
     // This will wait until we know the readable stream is actually valid before piping   
+}
+
+exports.json_save = async function (req, res, next) {
+    let str = JSON.stringify(req.body.json_data).toString();
+    console.log(str)
+    fs.writeFileSync('description.json', str);
+
+    client.uploadFrom('./description.json', req.body.basedir+"/description.json").then(reslt => {
+            fs.unlink('description.json', (err) => {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("FILE DELETED");
+                }
+            })
+            res.status(200).json({ message:`Description ${req.body.json_data.data } added` });
+        });
 }

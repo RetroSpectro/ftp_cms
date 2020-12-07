@@ -18,6 +18,7 @@ router.get('/ftp', main.get_ftp_page);
 router.post('/add_working_dir',main.add_working_dir);
 
 router.get('/ftp_dir',main.get_ftp_dir);
+router.post('/json_save',main.json_save);
 
 router.get('/dirs/:dir', main.get_modered_dir);
 router.post('/content', main.get_content_to_show);

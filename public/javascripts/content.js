@@ -14,10 +14,38 @@ $(document).ready(function () {
         $('.modal-body').empty();
     });
 
-    let dirname;
+    $('#json_button').on('click', function (e) {
+        console.log("SAVING JSON")
+
+        let basedir = $('#basedir').text();
+
+        if ($('#description_text')) {
+
+            let description_text = $('#description_text').val();
+            let json_data = { description: description_text.trim() };
+            console.log(description_text)
+            console.log(json_data)
+            fetch("/json_save", {
+                method: 'POST',
+                credentials: 'same-origin',
+                cors: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ basedir, json_data })
+            }).then(res => {
+                console.log("JSON SAVED")
+                $('.modal').modal('hide');
+                $('.modal-body').empty();
+            });
+        }
+
+    });
+
     $('input').on('click', function (e) {
         e.preventDefault();
         console.log(e)
+        let dirname;
         dirname = e.currentTarget.alt;
         console.log("Clicked");
         console.log(dirname);
@@ -49,8 +77,8 @@ $(document).ready(function () {
                             $('.modal-body').append('<p>' + json.data + '</p>')
 
                         }
-                        else if (json.type== "mp4") {
-                            
+                        else if (json.type == "mp4") {
+
                             $('.modal').modal('show')
                             console.log('in video');
                             $('.modal-body').append(`<video controls>
@@ -59,11 +87,26 @@ $(document).ready(function () {
                                 Your browser does not support the <code>video</code> element.
                             </video>`)
                         }
-                        else{
-                                let img = $(`<img style="max-width: 100%;
+                        else if (json.type == "json") {
+                            if (json.data.description) {
+                                $('.modal-body').append(`<textarea id="description_text" name="description_text"
+                            rows="5" cols="33">
+                                    ${json.data.description}
+                                </textarea>`)
+                            }
+                            else {
+                                $('.modal-body').append(`<textarea id="description_text" name="description_text"
+                                rows="5" cols="33">
+                                        ${json.data}
+                                    </textarea>`)
+                            }
+
+                        }
+                        else {
+                            let img = $(`<img style="max-width: 100%;
                                 max-height: 100%;" alt=${json.filename}>`);
-                                img.attr("src", `data:image/${json.ending};base64,${json.data}`);
-                                $('.modal-body').append(img);
+                            img.attr("src", `data:image/${json.ending};base64,${json.data}`);
+                            $('.modal-body').append(img);
                         }
                     }
 
