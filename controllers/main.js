@@ -217,30 +217,33 @@ exports.get_ftp_page = function(req, res, next) {
     })
 }
 
-function createDir(dirname) {
-    fs.mkdirSync(basedir + dirname);
-}
+// function createDir(dirname) {
+//     fs.mkdirSync(basedir + dirname);
+// }
 
 
 exports.add_working_dir = function(req, res, next) {
 
-    return models.User.findOne({
+    models.User.findOne({
         where: {
             username: req.body.username
         }
     }).then(user => {
 
-        createDir(req.body.file);
+        client.send(`mkdir ${basedir}${req.body.file}`).then(result => {
 
-        let UserFile = models.UserFile.build({
-            username: req.body.username,
-            role: user.role,
-            file: req.body.file
+            let UserFile = models.UserFile.build({
+                username: req.body.username,
+                role: user.role,
+                file: req.body.file
+            });
+
+            return UserFile.save().then(result => {
+                res.redirect("/ftp");
+            })
         });
+        //createDir(req.body.file);
 
-        return UserFile.save().then(result => {
-            res.redirect("/ftp");
-        })
     });
 
 }
