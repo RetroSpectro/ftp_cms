@@ -8,7 +8,9 @@ html(lang='en')
     +navbar(user)
     .container
       h1= title
-      p Welcome to #{title}      
+      p Welcome to #{title}
+      if error
+        p.text-danger Error: #{error}        
       if user 
         h3 You enter as  #{user.role}
         if connect

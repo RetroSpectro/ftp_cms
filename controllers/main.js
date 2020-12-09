@@ -30,45 +30,18 @@ async function clientAuth(host, port, user, password) {
     console.log(port);
     console.log(user);
     console.log(password);
-    client.ftp.verbose = true
+    //  client.ftp.verbose = true
     try {
-
-        //     const secureOptions = {
-        //   // Necessary only if the server requires client certificate authentication.
-        //   key: fs.readFileSync('client-key.pem'),
-        //   cert: fs.readFileSync('client-cert.pem'),
-
-        //   // Necessary only if the server uses a self-signed certificate.
-        //   ca: [ fs.readFileSync('server-cert.pem') ],
-
-        //   // Necessary only if the server's cert isn't for "localhost".
-        //   checkServerIdentity: () => { return null; },
-        // };
-
         await client.access({
-                host: host,
-                port: port,
-                user: user,
-                password: password,
-                secure: false,
-                // secureOptions : secureOptions
-            })
-            // await client.ensureDir("/my/remote/directory")
+            host: host,
+            port: port,
+            user: user,
+            password: password,
+            secure: false,
+            // secureOptions : secureOptions
+        })
         console.log("************LIST OF CLIENTS FILES********");
         await client.ensureDir(basedir)
-        console.log(await client.list())
-
-        // client.trackProgress(info => {
-        //     console.log(info)
-        //     console.log("*************")
-        //     console.log("File", info.name)
-        //     console.log("Type", info.type)
-        //     console.log("Transferred", info.bytes)
-        //     console.log("Transferred Overall", info.bytesOverall)
-        // })
-
-        // await client.uploadFrom("temp/readme.txt", "readme.txt")
-        // await client.downloadTo("README_COPY.md", "README_FTP.md")
         return client;
     } catch (err) {
 
@@ -104,11 +77,7 @@ exports.chose_ftp = async function(req, res, next) {
                 return;
             }
             console.log(res);
-            //     // Prints something like
-            //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:32 testfile1.txt
-            //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:31 testfile2.txt
-            //     // -rw-r--r--   1 sergi    staff           0 May 29 13:05 testfile3.txt
-            //     // ...
+
         });
         req.flash('host', host + ':' + port)
         res.redirect('/');
@@ -121,37 +90,19 @@ exports.get_main_page = function(req, res, next) {
     basedir = "/";
     if (req.user) {
         // client = clientAuth(req.user.username, req.user.password, req.user.role);
-        console.log("HERE IS BASEDIR");
-        console.log(basedir);
-        if (client)
-            client.list(basedir, (err, reslt) => {
-                if (err) {
-                    req.flash('host', "Error to connect")
-                    res.redirect('/');
-                    return;
-                } else {
-
-                }
-                console.log(reslt);
-                //     // Prints something like
-                //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:32 testfile1.txt
-                //     // -rw-r--r--   1 sergi    staff           4 Jun 03 09:31 testfile2.txt
-                //     // -rw-r--r--   1 sergi    staff           0 May 29 13:05 testfile3.txt
-                //     // ...
-            });
         let message = req.flash('host');
         res.render('index', { title: 'CMS', user: req.user, connect: message[0] });
+    } else {
+        models.Role.findAll().then(roles => {
+
+            if (roles.length == 0) {
+                let add = require('./FillRoleTable.js');
+                add.addRoles();
+            }
+        });
+
+        res.render('index', { title: 'CMS', user: req.user, connect: false });
     }
-    models.Role.findAll().then(roles => {
-
-        if (roles.length == 0) {
-            let add = require('./FillRoleTable.js');
-            add.addRoles();
-        }
-    });
-
-    res.render('index', { title: 'CMS', user: req.user, connect: false });
-
 
 
 }
