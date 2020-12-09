@@ -13,7 +13,7 @@ router.get('/add', main.get_add_page);
 router.post('/add_user', main.add_user);
 
 /*FTP */
-router.post('/dirs/:dir/:indir/post_file', main.post_files);
+router.post('/post_file', main.post_files);
 router.get('/ftp', main.get_ftp_page);
 router.post('/add_working_dir',main.add_working_dir);
 

@@ -21,6 +21,14 @@ html(lang='en')
                   button.btn.btn-secondary(id="close" type='button' data-dismiss='modal') Close
           
       if dirs
+            span(id="basedir") #{basedir}
+            form(name='files')
+              .input-group
+                .custom-file
+                  input#inputFile.custom-file-input(type='file')
+                  label.custom-file-label(for='inputFile') Выберите файл для выгрузки
+                .input-group-append
+                  button.btn.btn-outline-primary(id="upload" type='button') Загрузить
             for dir in dirs
               if(dir.type==2)
                 .media

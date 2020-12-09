@@ -15,7 +15,7 @@ $(document).ready(function () {
     });
 
     let dirname;
-    $('input').on('click', function (e) {
+    $('input.mr-1').on('click', function (e) {
         e.preventDefault();
         console.log(e)
         dirname = e.currentTarget.alt;
@@ -78,4 +78,47 @@ $(document).ready(function () {
 
     });
 
+    $('#upload').on('click', function (e) {
+        e.preventDefault();
+        console.log(e)
+        let basedir = $('#basedir').text();;
+        console.log("Clicked");
+        console.log(basedir);
+        let file= $('#inputFile').val();
+        console.log(document.files.inputFile.value);
+      //  console.log(document.files.test.value);
+       // console.log(document.formname.files);
+
+
+        fetch("/post_file", {
+            method: 'POST',
+            credentials: 'same-origin',
+            cors: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({file, basedir })
+        }).then(res => {
+            console.log("Request complete! response:", res);
+            if (res.status == 200) {
+                 window.location.href=res.redirected;
+                
+            }
+
+
+
+            if (res.status == 404) {
+                res.text().then(function (text) {
+                    console.log(text)
+                  //  $(".error").append(text)
+                });
+            }
+
+
+        }).catch((error) => {
+            console.error('Error:', error);
+        });
+
+
+    });
 });
