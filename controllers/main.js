@@ -25,7 +25,7 @@ let generateHash = function(password) {
 }
 
 async function clientAuth(host, port, user, password) {
-
+    client = new ftp.Client();
     console.log(host);
     console.log(port);
     console.log(user);
@@ -53,6 +53,7 @@ async function clientAuth(host, port, user, password) {
 }
 
 exports.chose_ftp = async function(req, res, next) {
+    client = new ftp.Client();
     let host = req.body.host;
     let port = req.body.port;
     let user = req.body.user;
@@ -445,4 +446,31 @@ exports.json_save = async function(req, res, next) {
         })
         res.status(200).json({ message: `Description ${req.body.json_data.data } added` });
     });
+}
+
+
+const passport = require('passport');
+const myPassport = require('../passport_setup')(passport);
+
+
+
+exports.get_login_page = function(req, res, next) {
+    res.render('auth/login', { formData: {}, errors: {} });
+}
+
+
+exports.login = function(req, res, next) {
+    client = new ftp.Client();
+    passport.authenticate('local', {
+        successRedirect: "/",
+        failureRedirect: "/login",
+        failureFlash: true
+    })(req, res, next)
+}
+
+exports.logout = function(req, res, next) {
+    req.logout();
+    req.session.destroy();
+    res.redirect('/');
+    client = new ftp.Client();
 }
