@@ -32,6 +32,7 @@ async function clientAuth(host, port, user, password) {
     console.log(password);
     //  client.ftp.verbose = true
     try {
+        console.log(client)
         await client.access({
             host: host,
             port: port,
