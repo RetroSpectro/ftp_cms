@@ -230,8 +230,12 @@ exports.add_working_dir = function(req, res, next) {
         }
     }).then(user => {
 
-        client.send(`mkdir ${basedir}${req.body.file}`).then(result => {
+        // client.features().then(reslt=>{
+        //     console.log(reslt)
+        // });
 
+        client.send(`MKD ${req.body.file}`).then(result => {
+            console.log(result)
             let UserFile = models.UserFile.build({
                 username: req.body.username,
                 role: user.role,
