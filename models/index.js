@@ -10,7 +10,7 @@ const db = {};
 let sequelize;
 if(env!='development'){
   sequelize = new Sequelize(
-  "postgres://yboqnmcgxwjyqr:a04edc8cec4e281e1ceb9dae4fc5af9468d60fae854a73deacd9e0cb60cca7a9@ec2-54-247-71-245.eu-west-1.compute.amazonaws.com:5432/d39kis2ae3as88");
+  "postgres://klxqqhbeqibwtn:63f6a95281fc935352e65258f4c53a0e7d1f87a3f3f2543c016fc282f2cc131f@ec2-99-81-238-134.eu-west-1.compute.amazonaws.com:5432/d45upfj0vuseo4");
   
 }
 else
