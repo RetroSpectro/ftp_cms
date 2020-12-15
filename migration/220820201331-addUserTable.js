@@ -19,6 +19,22 @@ module.exports = {
       role: {
         allowNull: false,
         type: Sequelize.STRING,
+      },
+      host: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      port: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      log: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      pswd: {
+        type: Sequelize.STRING,
+        allowNull: false,
       }
     })
   },

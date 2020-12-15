@@ -6,23 +6,36 @@ html(lang='en')
     header
     include ../common/navbar.pug 
     +navbar(user)
-    h1= title
-    p Welcome to #{title}
-    form(action='/add_user',method='POST')
-        .formgroup
-            lable.small.mb-1.mt-3 Имя:
-            input(placeholder='Enter username', required=true, name='username', type='text', value=formData.username).form-control
-            if (errors&&errors.username)
-                p.small.text-danger #{errors.username}
-            lable.small.mb-1.mt-3 Пароль:
-            input(placeholder='Password', required=true, name='password', type='password', value='').form-control
-            if (errors&&errors.password)
-                p.small.text-danger #{errors.password}
-            lable.small.mb-1.mt-3 Роль:
-            select( id="role"  required=true, name='role').form-control
-                if roles
-                    for role in roles
-                        option(value=role.name) #{role.name}    
-            button.mt-3.btn.btn-primary(type='submit') Добавить
+    .container
+        h1= title
+        p Welcome to #{title}
+        form(action='/add_user',method='POST')
+            .formgroup
+                lable.small.mb-1.mt-3 Имя:
+                input(placeholder='Enter username', required=true, name='username', type='text', value=formData.username).form-control
+                if (errors&&errors.username)
+                    p.small.text-danger #{errors.username}
+                lable.small.mb-1.mt-3 Пароль:
+                input(placeholder='Password', required=true, name='password', type='password', value='').form-control
+                if (errors&&errors.password)
+                    p.small.text-danger #{errors.password}
+                lable.small.mb-1.mt-3 Роль:
+                select( id="role"  required=true, name='role').form-control
+                    if roles
+                        for role in roles
+                            option(value=role.name) #{role.name}    
+                lable.small.mb-1.mt-3 URl:
+                input(placeholder='URl', required=true, id="host", name='host',value='89.223.28.200').form-control
+                lable.small.mb-1.mt-3 Port:
+                input(placeholder='Port', id="port",  required=true, name='port', value='21').form-control
+                if (error)
+                    p.small.text-danger #{error}
+                lable.small.mb-1.mt-3 Имя на FTP:
+                input(placeholder='Enter your name', required=true, name='log', type='text').form-control
+                lable.small.mb-1.mt-3 Пароль на FTP:
+                input(placeholder='Password', required=true, name='pswd', type='password').form-control
+                lable.small.mb-1.mt-3 Его корневая папка на FTP:
+                input(placeholder='Basedir', required=true, name='based', type='text',value="/").form-control
+                button.mt-3.btn.btn-primary(type='submit') Добавить
     include ../common/footer.pug
     +footer()

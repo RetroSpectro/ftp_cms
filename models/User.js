@@ -19,7 +19,27 @@ module.exports = (sequelize, DataTypes) => {
    role: {
       type: DataTypes.STRING,
       allowNull: false,
-    }
+    },
+    host: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    port: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    log: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    pswd: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    basedir:{
+      type: DataTypes.STRING,
+      allowNull: false,
+  }
   }, {
     timestamps: false
   });

@@ -27,7 +27,12 @@ module.exports.addRoles = function (res, req, next) {
         let newUser = models.User.build({
             username: "root",
             password: generateHash("root"),
-            role: "admin"
+            role: "admin",
+            host:'89.223.28.200',
+            port:'21',
+            log:'alpha',
+            pswd:`bmDP8E$\\tS2@`,
+            basedir:"/"
         });
 
         return newUser.save().then(result => {

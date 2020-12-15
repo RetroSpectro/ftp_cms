@@ -23,8 +23,6 @@ router.post('/json_save', main.json_save);
 router.get('/dirs/:dir', main.get_modered_dir);
 router.post('/content', main.get_content_to_show);
 
-router.post('/chose_ftp', main.chose_ftp);
-
 /* AUTH */
 
 router.get('/login', main.get_login_page);

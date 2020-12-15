@@ -52,48 +52,45 @@ async function clientAuth(host, port, user, password) {
     return null;
 }
 
-exports.chose_ftp = async function(req, res, next) {
-    client = new ftp.Client();
-    let host = req.body.host;
-    let port = req.body.port;
-    let user = req.body.user;
-    let password = req.body.password;
-    console.log(host);
-    console.log(port);
-    console.log(user);
-    console.log(password);
-    client = await clientAuth(host, port, user, password);
-    if (!client) {
-        console.log("SYNC FAILED");
-        res.render('index', { error: " Синхронизация прервана. Проверьте наличие FTP-сервера по адресу " + host + " и порту " + port });
 
-    } else {
-        console.log("connected");
-        console.log(client);
-        console.log("HERE IS BASEDIR");
-        console.log(basedir);
-        await client.list(basedir, (err, res) => {
-            if (err) {
-                req.flash('host', "Error to connect")
-                res.redirect('/');
-                return;
-            }
-            console.log(res);
-
-        });
-        req.flash('host', host + ':' + port)
-        res.redirect('/');
-    }
-
-}
-
-exports.get_main_page = function(req, res, next) {
+exports.get_main_page = async function(req, res, next) {
 
     basedir = "/";
     if (req.user) {
         // client = clientAuth(req.user.username, req.user.password, req.user.role);
-        let message = req.flash('host');
-        res.render('index', { title: 'CMS', user: req.user, connect: message[0] });
+        client = new ftp.Client();
+        let host = req.user.host;
+        let port = req.user.port;
+        let user = req.user.log;
+        let password = req.user.pswd;
+        console.log(host);
+        console.log(port);
+        console.log(user);
+        console.log(password);
+        client = await clientAuth(host, port, user, password);
+        if (!client) {
+            console.log("SYNC FAILED");
+            res.render('index', { error: " Синхронизация прервана. Проверьте наличие FTP-сервера по адресу " + host + " и порту " + port });
+    
+        } else {
+            console.log("connected");
+            console.log(client);
+            console.log("HERE IS BASEDIR");
+            console.log(basedir);
+            await client.list(basedir, (err, res) => {
+                if (err) {
+                    req.flash('host', "Error to connect")
+                    res.redirect('/');
+                    return;
+                }
+                console.log(res);
+    
+            });
+            req.flash('host', host + ':' + port)
+            let message = req.flash('host');
+            res.render('index', { title: 'CMS', user: req.user, connect: message[0] });
+        }
+       
     } else {
         models.Role.findAll().then(roles => {
 
@@ -134,7 +131,12 @@ exports.add_user = function(req, res, next) {
             let newUser = models.User.build({
                 username: req.body.username,
                 password: generateHash(req.body.password),
-                role: req.body.role
+                role: req.body.role,
+                host: req.body.host,
+                port: req.body.port,
+                log: req.body.log,
+                pswd: req.body.pswd,
+                basedir: req.body.based
             });
 
             return newUser.save().then(result => {
@@ -213,7 +215,8 @@ exports.post_files = async function(req, res, next) {
 exports.get_ftp_page = function(req, res, next) {
     basedir = "/";
     return models.User.findAll().then(users => {
-        res.render('admin/ftp', { title: 'FTP', user: req.user, users: users, basedir: basedir });
+        basedir=users.basedir;
+            res.render('admin/ftp', { title: 'FTP', user: req.user, users: users, basedir: basedir });
     })
 }
 
@@ -252,6 +255,7 @@ exports.add_working_dir = function(req, res, next) {
 
 }
 exports.get_ftp_dir = async function(req, res, next) {
+    basedir=req.user.basedir;
     let dirs = await client.list(basedir, (err, reslts) => {
         if (err) {
             res.status(422).json({
@@ -467,7 +471,6 @@ exports.get_login_page = function(req, res, next) {
 
 
 exports.login = function(req, res, next) {
-    client = new ftp.Client();
     passport.authenticate('local', {
         successRedirect: "/",
         failureRedirect: "/login",
