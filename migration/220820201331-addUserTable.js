@@ -35,7 +35,11 @@ module.exports = {
       pswd: {
         type: Sequelize.STRING,
         allowNull: false,
-      }
+      },
+      basedir:{
+        type: Sequelize.STRING,
+        allowNull: false,
+    }
     })
   },
   down: (queryInterface, Sequelize) => {
