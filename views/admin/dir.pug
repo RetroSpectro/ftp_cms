@@ -29,13 +29,15 @@ html(lang='en')
               if dir.type!="json"&&dir.dir.name!="description.json"
                 if dir.type=="dir"
                   .media
-                      a(href="/dirs/"+dir.dir.name).text-decoration-none.text-dark
-                          img.mr-1(src='/images/images.png' alt=dir.dir.name)
-                          .media-body
+                          a(href="/dirs/"+dir.dir.name).text-decoration-none.text-dark
+                            img.mr-1(src='/images/images.png' style="width:200px;height:200px" alt=dir.dir.name)
+                          .media-body.mx-auto
                               h5.mt-0 #{dir.dir.name}
-                              | #{dir.dir.rawModifiedAt} 
                               p.text-primary #{dir.dir.user} 
                               p.text-info #{dir.dir.role }
+                              if dir.json
+                                p.text-success Title: #{dir.json.title}
+                                p.text-success Описание: #{dir.json.description}
               
                 else if dir.type=="txt"
                   .media

@@ -266,21 +266,78 @@ exports.get_ftp_dir = async function(req, res, next) {
 
     });
     if (dirs) {
-        console.log(dirs);
+        //console.log(dirs);
         let dir_desc = [];
         for (let i = 0; i < dirs.length; i++) {
             const dir = dirs[i];
             if (dir.type != 2) {
                 let type = dir.name.toString().split('.');
 
-                console.log(type[1])
+               // console.log(type[1])
                 dir_desc.push({ type: type[1], dir: dir });
             } else {
-                dir_desc.push({ type: "dir", dir: dir });
+                console.log(basedir+dir.name);
+
+               let temp_files= await client.list(basedir+dir.name, (err, reslts) => {
+                    if (err) {
+                        res.status(422).json({
+                            message: `${err}`
+                        });
+                    }
+                    return reslts;
+                });
+                let json_file;
+                if(temp_files)
+                {
+                
+                    for (let j = 0; j < temp_files.length; j++) {
+                        let in_dir=temp_files[j];
+                        if(in_dir!=null&&in_dir!=2)
+                        {
+                        
+                            let type = in_dir.name.toString().split('.');            
+                            if(type[0]=='description'&&type[1]=="json")
+                            {
+                                let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir+dir.name+ "/" + in_dir.name).then(reslt => {
+                                    console.log("************RESULTED STREAM*********")
+                                    console.log(reslt)
+                                    console.log("************RESULTED STREAM END*********")
+                
+                                    json_file = JSON.parse(fs.readFileSync('./temp/' +in_dir.name).toString());
+                                  
+                                        fs.unlink('./temp/' + in_dir.name, (err) => {
+                                            if (err) {
+                                                console.log(err);
+                                            } else {
+                                                console.log("FILE DELETED");
+                                            }
+                                        })
+                                
+                                });
+                               
+                            }
+                        }
+                        
+                    }
+                   
+                }
+                if(json_file)
+                {
+                    console.log(json_file)
+                    console.log("IN PUSHING JSON")
+                    dir_desc.push({ type: "dir", dir: dir, json: json_file });
+                }
+                else{
+                    dir_desc.push({ type: "dir", dir: dir });
+                }
+               
+
+              
 
             }
 
         }
+        //console.log(dir_desc)
         res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
     }
 
@@ -315,11 +372,69 @@ exports.get_modered_dir = async function(req, res, next) {
                 console.log(type[1])
                 dir_desc.push({ type: type[1], dir: dir });
             } else {
-                dir_desc.push({ type: "dir", dir: dir });
+                console.log(basedir+dir.name);
+
+                let temp_files= await client.list(basedir+dir.name, (err, reslts) => {
+                     if (err) {
+                         res.status(422).json({
+                             message: `${err}`
+                         });
+                     }
+                     return reslts;
+                 });
+                 let json_file;
+                 if(temp_files)
+                 {
+                 
+                     for (let j = 0; j < temp_files.length; j++) {
+                         let in_dir=temp_files[j];
+                         if(in_dir!=null&&in_dir!=2)
+                         {
+                         
+                             let type = in_dir.name.toString().split('.');            
+                             if(type[0]=='description'&&type[1]=="json")
+                             {
+                                 let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir+dir.name+ "/" + in_dir.name).then(reslt => {
+                                     console.log("************RESULTED STREAM*********")
+                                     console.log(reslt)
+                                     console.log("************RESULTED STREAM END*********")
+                 
+                                     json_file = JSON.parse(fs.readFileSync('./temp/' +in_dir.name).toString());
+                                   
+                                         fs.unlink('./temp/' + in_dir.name, (err) => {
+                                             if (err) {
+                                                 console.log(err);
+                                             } else {
+                                                 console.log("FILE DELETED");
+                                             }
+                                         })
+                                 
+                                 });
+                                
+                             }
+                         }
+                         
+                     }
+                    
+                 }
+                 if(json_file)
+                 {
+                     console.log(json_file)
+                     console.log("IN PUSHING JSON")
+                     dir_desc.push({ type: "dir", dir: dir, json: json_file });
+                 }
+                 else{
+                     dir_desc.push({ type: "dir", dir: dir });
+                 }
+                
+ 
+               
+ 
 
             }
 
         }
+        console.log(dir_desc)
         res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
     }
 }
