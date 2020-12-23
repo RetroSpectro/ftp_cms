@@ -8,6 +8,9 @@ html(lang='en')
     +navbar(user)
     .container
       h1= title
+      if error
+        h2.text-danger #{error}
+
       span(id='basedir') #{basedir}
       .modal(tabindex='-1' role='dialog')
             .modal-dialog.modal-lg(role='document')
@@ -64,7 +67,7 @@ html(lang='en')
                               p.text-primary #{dir.dir.user} 
                               p.text-info #{dir.dir.role }     
                                       
-      if dirs.length==0
+      if !dirs||dirs.length==0
         h1 Нет рабочих папок                      
   include ../common/footer.pug
   +footer()
