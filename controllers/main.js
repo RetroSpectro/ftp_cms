@@ -71,7 +71,7 @@ exports.get_main_page = async function(req, res, next) {
         if (!client) {
             console.log("SYNC FAILED");
             res.render('index', { error: " Синхронизация прервана. Проверьте наличие FTP-сервера по адресу " + host + " и порту " + port });
-    
+
         } else {
             console.log("connected");
             console.log(client);
@@ -84,13 +84,13 @@ exports.get_main_page = async function(req, res, next) {
                     return;
                 }
                 console.log(res);
-    
+
             });
             req.flash('host', host + ':' + port)
             let message = req.flash('host');
             res.render('index', { title: 'CMS', user: req.user, connect: message[0] });
         }
-       
+
     } else {
         models.Role.findAll().then(roles => {
 
@@ -215,8 +215,9 @@ exports.post_files = async function(req, res, next) {
 exports.get_ftp_page = function(req, res, next) {
     basedir = "/";
     return models.User.findAll().then(users => {
-        basedir=users.basedir;
-            res.render('admin/ftp', { title: 'FTP', user: req.user, users: users, basedir: basedir });
+        basedir = users.basedir + "/";
+
+        res.render('admin/ftp', { title: 'FTP', user: req.user, users: users, basedir: basedir });
     })
 }
 
@@ -256,58 +257,55 @@ exports.add_working_dir = function(req, res, next) {
 }
 exports.get_ftp_dir = async function(req, res, next) {
 
-    basedir=req.user.basedir;
-    try{
-        
-      let dirs = await client.list(basedir, (err, reslts) => {
-        if (err) {
-            res.status(422).json({
-                message: `${err}`
-            });
-        }
-        return reslts;
+    basedir = req.user.basedir + "/";
+    try {
 
-    });
-    if (dirs) {
-        //console.log(dirs);
-        let dir_desc = [];
-        for (let i = 0; i < dirs.length; i++) {
-            const dir = dirs[i];
-            if (dir.type != 2) {
-                let type = dir.name.toString().split('.');
-
-               // console.log(type[1])
-                dir_desc.push({ type: type[1], dir: dir });
-            } else {
-                console.log(basedir+dir.name);
-
-               let temp_files= await client.list(basedir+dir.name, (err, reslts) => {
-                    if (err) {
-                        res.status(422).json({
-                            message: `${err}`
-                        });
-                    }
-                    return reslts;
+        let dirs = await client.list(basedir, (err, reslts) => {
+            if (err) {
+                res.status(422).json({
+                    message: `${err}`
                 });
-                let json_file;
-                if(temp_files)
-                {
-                
-                    for (let j = 0; j < temp_files.length; j++) {
-                        let in_dir=temp_files[j];
-                        if(in_dir!=null&&in_dir!=2)
-                        {
-                        
-                            let type = in_dir.name.toString().split('.');            
-                            if(type[0]=='description'&&type[1]=="json")
-                            {
-                                let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir+dir.name+ "/" + in_dir.name).then(reslt => {
-                                    console.log("************RESULTED STREAM*********")
-                                    console.log(reslt)
-                                    console.log("************RESULTED STREAM END*********")
-                
-                                    json_file = JSON.parse(fs.readFileSync('./temp/' +in_dir.name).toString());
-                                  
+            }
+            return reslts;
+
+        });
+        if (dirs) {
+            //console.log(dirs);
+            let dir_desc = [];
+            for (let i = 0; i < dirs.length; i++) {
+                const dir = dirs[i];
+                if (dir.type != 2) {
+                    let type = dir.name.toString().split('.');
+
+                    // console.log(type[1])
+                    dir_desc.push({ type: type[1], dir: dir });
+                } else {
+                    console.log(basedir + dir.name);
+
+                    let temp_files = await client.list(basedir + dir.name, (err, reslts) => {
+                        if (err) {
+                            res.status(422).json({
+                                message: `${err}`
+                            });
+                        }
+                        return reslts;
+                    });
+                    let json_file;
+                    if (temp_files) {
+
+                        for (let j = 0; j < temp_files.length; j++) {
+                            let in_dir = temp_files[j];
+                            if (in_dir != null && in_dir != 2) {
+
+                                let type = in_dir.name.toString().split('.');
+                                if (type[0] == 'description' && type[1] == "json") {
+                                    let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir + dir.name + "/" + in_dir.name).then(reslt => {
+                                        console.log("************RESULTED STREAM*********")
+                                        console.log(reslt)
+                                        console.log("************RESULTED STREAM END*********")
+
+                                        json_file = JSON.parse(fs.readFileSync('./temp/' + in_dir.name).toString());
+
                                         fs.unlink('./temp/' + in_dir.name, (err) => {
                                             if (err) {
                                                 console.log(err);
@@ -315,37 +313,35 @@ exports.get_ftp_dir = async function(req, res, next) {
                                                 console.log("FILE DELETED");
                                             }
                                         })
-                                
-                                });
-                               
-                            }
-                        }
-                        
-                    }
-                   
-                }
-                if(json_file)
-                {
-                    console.log(json_file)
-                    console.log("IN PUSHING JSON")
-                    dir_desc.push({ type: "dir", dir: dir, json: json_file });
-                }
-                else{
-                    dir_desc.push({ type: "dir", dir: dir });
-                }
-               
 
-              
+                                    });
+
+                                }
+                            }
+
+                        }
+
+                    }
+                    if (json_file) {
+                        console.log(json_file)
+                        console.log("IN PUSHING JSON")
+                        dir_desc.push({ type: "dir", dir: dir, json: json_file });
+                    } else {
+                        dir_desc.push({ type: "dir", dir: dir });
+                    }
+
+
+
+
+                }
 
             }
-
+            //console.log(dir_desc)
+            res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
         }
-        //console.log(dir_desc)
-        res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
+    } catch (error) {
+        res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error });
     }
-} catch (error) {
-    res.render('admin/dir', { title: 'FTP', basedir: basedir, error:error});
-}
 
 }
 
@@ -360,209 +356,204 @@ exports.get_modered_dir = async function(req, res, next) {
                     message: `${err}`
                 });
             }
-    
+
             return reslts;
-    
+
         });
         console.log("get_modered_dir")
         console.log(dirs);
         if (dirs) {
-    
+
             console.log(dirs);
             let dir_desc = [];
             for (let i = 0; i < dirs.length; i++) {
                 const dir = dirs[i];
                 if (dir.type != 2) {
                     let type = dir.name.toString().split('.');
-    
+
                     console.log(type[1])
                     dir_desc.push({ type: type[1], dir: dir });
                 } else {
-                    console.log(basedir+dir.name);
-    
-                    let temp_files= await client.list(basedir+dir.name, (err, reslts) => {
-                         if (err) {
-                             res.status(422).json({
-                                 message: `${err}`
-                             });
-                         }
-                         return reslts;
-                     });
-                     let json_file;
-                     if(temp_files)
-                     {
-                     
-                         for (let j = 0; j < temp_files.length; j++) {
-                             let in_dir=temp_files[j];
-                             if(in_dir!=null&&in_dir!=2)
-                             {
-                             
-                                 let type = in_dir.name.toString().split('.');            
-                                 if(type[0]=='description'&&type[1]=="json")
-                                 {
-                                     let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir+dir.name+ "/" + in_dir.name).then(reslt => {
-                                         console.log("************RESULTED STREAM*********")
-                                         console.log(reslt)
-                                         console.log("************RESULTED STREAM END*********")
-                     
-                                         json_file = JSON.parse(fs.readFileSync('./temp/' +in_dir.name).toString());
-                                       
-                                             fs.unlink('./temp/' + in_dir.name, (err) => {
-                                                 if (err) {
-                                                     console.log(err);
-                                                 } else {
-                                                     console.log("FILE DELETED");
-                                                 }
-                                             })
-                                     
-                                     });
-                                    
-                                 }
-                             }
-                             
-                         }
-                        
-                     }
-                     if(json_file)
-                     {
-                         console.log(json_file)
-                         console.log("IN PUSHING JSON")
-                         dir_desc.push({ type: "dir", dir: dir, json: json_file });
-                     }
-                     else{
-                         dir_desc.push({ type: "dir", dir: dir });
-                     }
-                    
-     
-                   
-     
-    
+                    console.log(basedir + dir.name);
+
+                    let temp_files = await client.list(basedir + dir.name, (err, reslts) => {
+                        if (err) {
+                            res.status(422).json({
+                                message: `${err}`
+                            });
+                        }
+                        return reslts;
+                    });
+                    let json_file;
+                    if (temp_files) {
+
+                        for (let j = 0; j < temp_files.length; j++) {
+                            let in_dir = temp_files[j];
+                            if (in_dir != null && in_dir != 2) {
+
+                                let type = in_dir.name.toString().split('.');
+                                if (type[0] == 'description' && type[1] == "json") {
+                                    let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir + dir.name + "/" + in_dir.name).then(reslt => {
+                                        console.log("************RESULTED STREAM*********")
+                                        console.log(reslt)
+                                        console.log("************RESULTED STREAM END*********")
+
+                                        json_file = JSON.parse(fs.readFileSync('./temp/' + in_dir.name).toString());
+
+                                        fs.unlink('./temp/' + in_dir.name, (err) => {
+                                            if (err) {
+                                                console.log(err);
+                                            } else {
+                                                console.log("FILE DELETED");
+                                            }
+                                        })
+
+                                    });
+
+                                }
+                            }
+
+                        }
+
+                    }
+                    if (json_file) {
+                        console.log(json_file)
+                        console.log("IN PUSHING JSON")
+                        dir_desc.push({ type: "dir", dir: dir, json: json_file });
+                    } else {
+                        dir_desc.push({ type: "dir", dir: dir });
+                    }
+
+
+
+
+
                 }
-    
+
             }
             console.log(dir_desc)
             res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
         }
     } catch (error) {
-        res.render('admin/dir', { title: 'FTP', basedir: basedir, error:error});
+        res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error });
     }
-    
+
 }
 
 exports.get_content_to_show = async function(req, res, next) {
-try{
-    let dirs = await client.list(basedir, (err, reslts) => {
-        if (err) {
-            res.status(422).json({
-                message: `${err}`
-            });
-        }
-
-        return reslts;
-
-    });
-    console.log("get_modered_dir")
-    console.log(dirs);
-    if (dirs) {
-        let find = false;
-        for (let i = 0; i < dirs.length; i++) {
-            const element = dirs[i];
-            if (element.name == req.body.dirname) {
-                find = true;
+    try {
+        let dirs = await client.list(basedir, (err, reslts) => {
+            if (err) {
+                res.status(422).json({
+                    message: `${err}`
+                });
             }
-        }
-        if (find) {
 
-            let reslts = await client.downloadTo("./temp/" + req.body.dirname, basedir + "/" + req.body.dirname).then(reslt => {
-                console.log("************RESULTED STREAM*********")
-                console.log(reslt)
-                console.log("************RESULTED STREAM END*********")
+            return reslts;
 
-                let file = req.body.dirname;
-                let type = file.toString().split('.');
-                let data;
-                console.log(type[1])
-                if (type[1] == 'txt') {
-                    data = fs.readFileSync('./temp/' + req.body.dirname, "utf8", (err, data) => {
-                        if (err) {
-                            res.status(404).send(err);
-
-                        }
-                        return data;
-
-                    })
-                    if (data) {
-                        console.log(data)
-                            // res.status(200).json({ data: data });
-                        fs.unlink('./temp/' + req.body.dirname, (err) => {
-                            if (err) {
-                                console.log(err);
-                            } else {
-                                console.log("FILE DELETED");
-                            }
-                        })
-                        res.status(200).json({ data: data, type: 'txt', filename: req.body.dirname });
-
-                    }
-                } else if (type[1] == 'json') {
-                    data = JSON.parse(fs.readFileSync('./temp/' + req.body.dirname).toString());
-                    if (data) {
-                        console.log(data)
-                            // res.status(200).json({ data: data });
-                        fs.unlink('./temp/' + req.body.dirname, (err) => {
-                            if (err) {
-                                console.log(err);
-                            } else {
-                                console.log("FILE DELETED");
-                            }
-                        })
-                        res.status(200).json({ data: data, type: 'json', filename: req.body.dirname });
-
-                    }
-                } else {
-                    data = fs.readFileSync('./temp/' + req.body.dirname, "base64", (err, data) => {
-                        if (err) {
-                            res.status(404).send(err);
-
-                        }
-                        return data;
-
-                    })
-                    if (data) {
-                        res.status(200).json({ data: data, type: type[1], ending: type[1], filename: req.body.dirname });
-                        fs.unlink('./temp/' + req.body.dirname, (err) => {
-                            if (err) {
-                                console.log(err);
-                            } else {
-                                console.log("FILE DELETED");
-                            }
-                        })
-                    }
+        });
+        console.log("get_modered_dir")
+        console.log(dirs);
+        if (dirs) {
+            let find = false;
+            for (let i = 0; i < dirs.length; i++) {
+                const element = dirs[i];
+                if (element.name == req.body.dirname) {
+                    find = true;
                 }
+            }
+            if (find) {
 
-            });
-        } else {
-            fs.writeFileSync('description.json', `{"description":"Описание"}`);
+                let reslts = await client.downloadTo("./temp/" + req.body.dirname, basedir + "/" + req.body.dirname).then(reslt => {
+                    console.log("************RESULTED STREAM*********")
+                    console.log(reslt)
+                    console.log("************RESULTED STREAM END*********")
 
-            client.uploadFrom('./description.json', basedir + "/description.json").then(reslt => {
-                fs.unlink('description.json', (err) => {
-                    if (err) {
-                        console.log(err);
+                    let file = req.body.dirname;
+                    let type = file.toString().split('.');
+                    let data;
+                    console.log(type[1])
+                    if (type[1] == 'txt') {
+                        data = fs.readFileSync('./temp/' + req.body.dirname, "utf8", (err, data) => {
+                            if (err) {
+                                res.status(404).send(err);
+
+                            }
+                            return data;
+
+                        })
+                        if (data) {
+                            console.log(data)
+                                // res.status(200).json({ data: data });
+                            fs.unlink('./temp/' + req.body.dirname, (err) => {
+                                if (err) {
+                                    console.log(err);
+                                } else {
+                                    console.log("FILE DELETED");
+                                }
+                            })
+                            res.status(200).json({ data: data, type: 'txt', filename: req.body.dirname });
+
+                        }
+                    } else if (type[1] == 'json') {
+                        data = JSON.parse(fs.readFileSync('./temp/' + req.body.dirname).toString());
+                        if (data) {
+                            console.log(data)
+                                // res.status(200).json({ data: data });
+                            fs.unlink('./temp/' + req.body.dirname, (err) => {
+                                if (err) {
+                                    console.log(err);
+                                } else {
+                                    console.log("FILE DELETED");
+                                }
+                            })
+                            res.status(200).json({ data: data, type: 'json', filename: req.body.dirname });
+
+                        }
                     } else {
-                        console.log("FILE DELETED");
-                    }
-                })
-                res.status(200).json({ data: `{"description":"Описание"}`, type: 'json', filename: "description.json" });
-            });
+                        data = fs.readFileSync('./temp/' + req.body.dirname, "base64", (err, data) => {
+                            if (err) {
+                                res.status(404).send(err);
 
+                            }
+                            return data;
+
+                        })
+                        if (data) {
+                            res.status(200).json({ data: data, type: type[1], ending: type[1], filename: req.body.dirname });
+                            fs.unlink('./temp/' + req.body.dirname, (err) => {
+                                if (err) {
+                                    console.log(err);
+                                } else {
+                                    console.log("FILE DELETED");
+                                }
+                            })
+                        }
+                    }
+
+                });
+            } else {
+                fs.writeFileSync('description.json', `{"description":"Описание"}`);
+
+                client.uploadFrom('./description.json', basedir + "/description.json").then(reslt => {
+                    fs.unlink('description.json', (err) => {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log("FILE DELETED");
+                        }
+                    })
+                    res.status(200).json({ data: `{"description":"Описание"}`, type: 'json', filename: "description.json" });
+                });
+
+
+            }
 
         }
 
+    } catch (error) {
+        res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error });
     }
-
-} catch (error) {
-    res.render('admin/dir', { title: 'FTP', basedir: basedir, error:error});
-}
 
 
     // This will wait until we know the readable stream is actually valid before piping   
