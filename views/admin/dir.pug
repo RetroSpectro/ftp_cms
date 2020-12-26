@@ -37,10 +37,14 @@ html(lang='en')
                           .media-body.mx-auto
                               h5.mt-0 #{dir.dir.name}
                               p.text-primary #{dir.dir.user} 
-                              p.text-info #{dir.dir.role }
                               if dir.json
-                                p.text-success Title: #{dir.json.title}
-                                p.text-success Описание: #{dir.json.description}
+                                if dir.json.title
+                                  p.mt-0.text-success Title: #{dir.json.title}
+                                if dir.json.name
+                                  p.mt-0.text-success Имя папки: #{dir.json.name}  
+                                if dir.json.description
+                                  p.mt-0.text-success Описание: #{dir.json.description}
+                                
               
                 else if dir.type=="txt"
                   .media

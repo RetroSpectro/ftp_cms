@@ -22,7 +22,8 @@ $(document).ready(function() {
 
             let description_text = $('#description_text').val();
             let description_title = $('#description_title').val();
-            let json_data = { description: description_text.trim() , title:description_title.trim()};
+            let description_name = $('#description_name').val();
+            let json_data = { description: description_text.trim(), title: description_title.trim(), name: description_name.trim() };
             console.log(json_data)
             fetch("/json_save", {
                 method: 'POST',
@@ -86,16 +87,26 @@ $(document).ready(function() {
                             </video>`)
                         } else if (json.type == "json") {
                             if (json.data.description) {
-                                let title =json.data.title;
-                                if(title==null)
-                                {
-                                    title =""
+                                let title = json.data.title;
+                                let name = json.data.name;
+                                if (title == null) {
+                                    title = ""
                                 }
-                                let descr =json.data.description.trim();
+                                if (name == null) {
+                                    name = ""
+                                }
+                                let descr = json.data.description.trim();
+                                if (descr == null) {
+                                    descr = ""
+                                }
+
                                 $('.modal-body').append(`
                                 <div class="col">
                                     <div class="row">
                                         <input id="description_title" placeholder="Title" type="text" name="description_title" value=${title} >
+                                    </div>
+                                    <div class="row">
+                                        <input id="description_name" placeholder="Dir name" type="text" name="description_name" value=${name} >
                                     </div>
                                     <div class="row">
                                         <textarea id="description_text" name="description_text"
@@ -104,14 +115,16 @@ $(document).ready(function() {
                                         </textarea>
                                     </div>
                                 </div>
-                                
                                 `)
-                              //  $('.modal-body').append(``)
+                                    //  $('.modal-body').append(``)
                             } else {
                                 $('.modal-body').append(`
                                 <div class="col">
                                     <div class="row">
                                         <input id="description_title" placeholder="Title" type="text" name="description_title" >
+                                    </div>
+                                    <div class="row">
+                                        <input id="description_name" placeholder="Dir name" type="text" name="description_name" >
                                     </div>
                                     <div class="row">
                                         <textarea id="description_text" name="description_text"
