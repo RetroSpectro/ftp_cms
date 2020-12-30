@@ -255,9 +255,8 @@ exports.add_working_dir = function(req, res, next) {
     });
 
 }
-exports.get_ftp_dir = async function(req, res, next) {
 
-    basedir = req.user.basedir + "/";
+async function get_dirs(req, res, next, back) {
     try {
 
         let dirs = await client.list(basedir, (err, reslts) => {
@@ -329,115 +328,110 @@ exports.get_ftp_dir = async function(req, res, next) {
                     } else {
                         dir_desc.push({ type: "dir", dir: dir });
                     }
-
-
-
-
                 }
-
             }
             //console.log(dir_desc)
-            res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
+            if (back) {
+                res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user, back: true });
+            } else {
+                res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
+            }
         }
     } catch (error) {
-        res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error });
+        if (back) {
+            res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error, user: req.user, back: true });
+        } else {
+            res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error, user: req.user });
+        }
+
     }
 
 }
 
-exports.get_modered_dir = async function(req, res, next) {
-    console.log(basedir);
-    basedir += req.params.dir + "/";
-    console.log(basedir);
-    try {
-        let dirs = await client.list(basedir, (err, reslts) => {
-            if (err) {
-                res.status(422).json({
-                    message: `${err}`
-                });
-            }
+exports.get_back = async function(req, res, next) {
+    if (basedir == "/" || basedir == req.user.basedir + '/') {
+        res.redirect('/ftp_dir');
+    }
+    let dirs = basedir.split('/');
+    console.log("First BASEDIR")
+    console.log(basedir)
+    console.log(dirs)
 
-            return reslts;
-
-        });
-        console.log("get_modered_dir")
-        console.log(dirs);
-        if (dirs) {
-
-            console.log(dirs);
-            let dir_desc = [];
-            for (let i = 0; i < dirs.length; i++) {
-                const dir = dirs[i];
-                if (dir.type != 2) {
-                    let type = dir.name.toString().split('.');
-
-                    console.log(type[1])
-                    dir_desc.push({ type: type[1], dir: dir });
-                } else {
-                    console.log(basedir + dir.name);
-
-                    let temp_files = await client.list(basedir + dir.name, (err, reslts) => {
-                        if (err) {
-                            res.status(422).json({
-                                message: `${err}`
-                            });
-                        }
-                        return reslts;
-                    });
-                    let json_file;
-                    if (temp_files) {
-
-                        for (let j = 0; j < temp_files.length; j++) {
-                            let in_dir = temp_files[j];
-                            if (in_dir != null && in_dir != 2) {
-
-                                let type = in_dir.name.toString().split('.');
-                                if (type[0] == 'description' && type[1] == "json") {
-                                    let reslts = await client.downloadTo("./temp/" + in_dir.name, basedir + dir.name + "/" + in_dir.name).then(reslt => {
-                                        console.log("************RESULTED STREAM*********")
-                                        console.log(reslt)
-                                        console.log("************RESULTED STREAM END*********")
-
-                                        json_file = JSON.parse(fs.readFileSync('./temp/' + in_dir.name).toString());
-
-                                        fs.unlink('./temp/' + in_dir.name, (err) => {
-                                            if (err) {
-                                                console.log(err);
-                                            } else {
-                                                console.log("FILE DELETED");
-                                            }
-                                        })
-
-                                    });
-
-                                }
-                            }
-
-                        }
-
-                    }
-                    if (json_file) {
-                        console.log(json_file)
-                        console.log("IN PUSHING JSON")
-                        dir_desc.push({ type: "dir", dir: dir, json: json_file });
-                    } else {
-                        dir_desc.push({ type: "dir", dir: dir });
-                    }
+    let temp_basedir = '/';
+    dirs.pop();
+    dirs.pop();
+    console.log("First BASEDIR after POp")
+    console.log(dirs)
 
 
+    for (let i = 0; i < dirs.length; i++) {
+        temp_basedir += dirs[i] + '/';
 
+    }
+    basedir = temp_basedir;
+    console.log("New BASEDIR")
+    console.log(basedir)
+    dirs = req.user.basedir.split('/');
+    console.log(dirs)
+    temp_basedir = '/';
+    for (let i = 0; i < dirs.length; i++) {
+        temp_basedir += dirs[i] + '/';
 
+    }
+    console.log("temp_basedir BASEDIR")
+    console.log(temp_basedir);
+    if (basedir.trim() == temp_basedir.trim()) {
+        res.redirect('/ftp_dir');
+    } else {
+        let dirs2 = basedir.trim().split('/');
+        console.log("DIRS")
+        console.log(dirs2.length)
+        console.log(dirs2)
+        let temp_basedir = "";
 
-                }
-
-            }
-            console.log(dir_desc)
-            res.render('admin/dir', { title: 'FTP', basedir: basedir, dirs: dir_desc, user: req.user });
+        dirs2.pop();
+        let dir = "";
+        if (dirs2.length == 1) {
+            res.redirect('/ftp_dir');
         }
-    } catch (error) {
-        res.render('admin/dir', { title: 'FTP', basedir: basedir, error: error });
+
+        if (dirs2.length > 1)
+            dir = dirs2[dirs2.length - 1];
+
+        console.log("DIRS AFTER POP")
+        console.log(dirs2.length)
+        console.log(dirs2)
+        for (let i = 0; i < dirs.length; i++) {
+            temp_basedir += dirs2[i] + '/';
+        }
+        basedir = temp_basedir;
+        console.log("DIRS")
+        console.log(dirs2.length)
+        console.log(dirs2)
+        console.log("DIR")
+        console.log(dir);
+
+        res.redirect(`/dirs/${dir}`);
+
     }
 
+}
+
+exports.get_ftp_dir = async function(req, res, next) {
+
+    basedir = req.user.basedir + "/";
+
+    get_dirs(req, res, next);
+}
+
+exports.get_modered_dir = async function(req, res, next) {
+    console.log(basedir);
+    let back = basedir;
+    basedir += req.params.dir + "/";
+    console.log("GETTING MODERATED DIR")
+    console.log(basedir);
+
+    get_dirs(req, res, next, back);
 }
 
 exports.get_content_to_show = async function(req, res, next) {

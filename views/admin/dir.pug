@@ -10,7 +10,6 @@ html(lang='en')
       h1= title
       if error
         h2.text-danger #{error}
-
       span(id='basedir') #{basedir}
       .modal(tabindex='-1' role='dialog')
             .modal-dialog.modal-lg(role='document')
@@ -23,6 +22,11 @@ html(lang='en')
                 .modal-footer
                   button.btn.btn-primary(id="json_button" type='button') Сохранить
                   button.btn.btn-secondary(id="close" type='button' data-dismiss='modal') Закрыть
+      .media
+        a(href="/back").text-decoration-none.text-dark
+            img.mr-1(src='/images/back.png' style="width:200px;height:200px" alt=back)
+        .media-body.mx-auto
+            h5.mt-0 Назад
       if dirs
             .media
               input.mr-1(type="image" src='/images/png/doc.png' style="width:200px;height:200px"  alt="description.json" name="submit" value="description.json")
@@ -44,7 +48,7 @@ html(lang='en')
                                   p.mt-0.text-success Имя папки: #{dir.json.name}  
                                 if dir.json.description
                                   p.mt-0.text-success Описание: #{dir.json.description}
-                                
+                               
               
                 else if dir.type=="txt"
                   .media

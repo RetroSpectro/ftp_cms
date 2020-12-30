@@ -22,6 +22,7 @@ router.post('/json_save', main.json_save);
 
 router.get('/dirs/:dir', main.get_modered_dir);
 router.post('/content', main.get_content_to_show);
+router.get('/back', main.get_back);
 
 /* AUTH */
 
