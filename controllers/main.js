@@ -410,8 +410,11 @@ exports.get_back = async function(req, res, next) {
         console.log(dirs2)
         console.log("DIR")
         console.log(dir);
-
-        res.redirect(`/dirs/${dir}`);
+        if (dir == "" || dir == " ") {
+            res.redirect('/ftp_dir');
+        } else {
+            res.redirect(`/dirs/${dir}`);
+        }
 
     }
 
